@@ -9,6 +9,15 @@ import csv
 # number of data points after every stimulus to use
 window_size = 100
 
+stim_types = {
+    'water': ['acqua piante'],
+    'H2SO': ['h2so'],
+    'ozone': ['ozone', 'ozono', 'o3'],
+    'NaCL': ['nacl'],
+    'light-on': ['light-on'],
+    'light-off': ['light-off']
+}
+
 # a stimulus on the plant, defined as a type (such as 'ozone') and time
 Stimulus = namedtuple('Stimulus', ['type', 'time'])
 
@@ -65,9 +74,26 @@ def load_mat(path):
 
         # calculate index of readings array from time and time step per reading
         index = time / sample_rate
-        # get type from name by removing trailing numbers (ozone6 -> ozone)
-        stim_type = re.sub(r'_?\d+$', '', name)
-        stimuli.append(Stimulus(stim_type, index))
+
+        # format name
+        name = re.sub(r'_?\d+$', '', name)  # remove trailing numbers
+        name = name.lower()                # convert to lowercase
+
+        # find type of stimulus
+        type_ = None
+
+        for t, aliases in stim_types.iteritems():
+            for alias in aliases:
+                if alias in name:
+                    type_ = t
+                    break
+
+            if type_:
+                break
+
+        # if type recognized, add to stimuli
+        if type_ is not None:
+            stimuli.append(Stimulus(type_, index))
 
         i += 1
 
