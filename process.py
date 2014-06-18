@@ -7,6 +7,9 @@ import plant
 # number of data points after every stimulus to use
 window_size = 10000
 
+# offset of window from start of stimulus (positive = after)
+window_offset = 0
+
 
 def process(plant_data):
     """
@@ -20,7 +23,8 @@ def process(plant_data):
 
     for stim in plant_data.stimuli:
         # create a window on each stimulus
-        window = plant_data.readings[stim.time:stim.time+window_size]
+        start = stim.time + window_offset
+        window = plant_data.readings[start:start+window_size]
 
         # center around starting value of window
         window = numpy.array([w - window[0] for w in window])
