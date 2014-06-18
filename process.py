@@ -165,6 +165,31 @@ def save_datapoints(path, datapoints):
             writer.writerow([stim_type] + data.T.flatten().tolist())
 
 
+def load_datapoints(path):
+    """
+    Load data points from a csv file.
+
+    Args:
+        path: File to load data points from.
+    Returns:
+        A list of tuples, where the first element of the tuple is the type of
+        stimulus and the second element is the data.
+    """
+
+    datapoints = []
+
+    with file(path, 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            stim_type = row[0]
+            data = map(float, row[1:])
+            data = numpy.array(data)
+            data = numpy.reshape(data, (-1, 2))  # reshape into two columns
+            datapoints.append((stim_type, data))
+
+    return datapoints
+
+
 # if called from command line, load mat files from given path
 if __name__ == "__main__":
     # get directory from command line
