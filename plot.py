@@ -16,6 +16,12 @@ def plot_datapoint(datapoint):
 def show():
 	plt.show()
 
+def save_plant_plots(plant_list):
+	for p in plant_list:
+		plot_plant_data(p)
+		plt.savefig("plant_plots/%s.jpg" % p.name)
+		plt.clf()
+
 def save_datapoint_plots(datapoints):
 	type_count = Counter()
 

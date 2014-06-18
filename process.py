@@ -117,6 +117,7 @@ if __name__ == "__main__":
     print "Writing to data.csv"
     save_datapoints("data.csv", datapoints)
 
-    # create plots of each datapoints
+    # create plots of each datapoint and plant
     print "Creating plots"
     plot.save_datapoint_plots(datapoints)
+    plot.save_plant_plots(plants)
