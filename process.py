@@ -5,7 +5,7 @@ import csv
 import plant
 
 # number of data points after every stimulus to use
-window_size = 100
+window_size = 10000
 
 
 def process(plant_data):
