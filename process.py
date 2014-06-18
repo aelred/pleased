@@ -22,6 +22,9 @@ def process(plant_data):
         # create a window on each stimulus
         window = plant_data.readings[stim.time:stim.time+window_size]
 
+        # center around starting value of window
+        window = numpy.array([w - window[0] for w in window])
+
         # skip if window is not large enough (e.g. stimulus near end of data)
         if len(window) != window_size:
             continue
