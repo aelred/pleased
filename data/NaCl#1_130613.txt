@@ -1,0 +1,39 @@
+NaCl#1
+
+0) AUTHOR: Luisa (Unifi)
+1) DATE and TIME: 13/06/2013
+2) DURATION of the experiments: about 3 hrs
+3) GOAL: show that the addiction of sodium chloride in the soil causes variation potentials.
+4) STIMULUS: addiction of 5 ml of 3M NaCl solution in the soil (mark)
+	- PATTERN: 140 min of spontaneous activity, stimulus and about 1 hr recording after stimulus.	 
+5) MATERIAL
+5.1) EXPERIMENTAL ENVIRONMENT: 
+	- plant surrounded by a metal fence, positioned inside an obscured Faraday cage 
+	- a silicone tube inserted into plant soil to inject the NaCl solution
+	- temperature: 25°C
+	- humidity: 39%
+	- light: led panel grow light 
+5.2) PLANT: 
+	- SPECIES: 2 tomatoes
+	- AGE: ~ 5 weeks 
+	- PHOTO: 0
+	- ALREADY USED FOR THE EXPERIMENTS: never
+5.3) ELECTRODES: 
+	- TYPE: needles for electromyography
+	- NUMBER: three for each plant
+	- PLACEMENT Plant 1: base of the stem=ground; medium=ch1; top= ch2; electrodes ch1 and ch2 are placed at a distance of 7 cm between them.
+	- PLACEMENT Plant 2: base of the stem=ground; medium=ch3; top= ch4; electrodes ch3 and ch4 are placed at a distance of 8 cm between them.
+
+5.4) DEVICES: 
+	- TYPE: WPI electrometer Duo-773 (plant 1); WI electrometer HiZ-223 (plant 2)
+	- SAMPLING RATE: 10 sample/sec
+	- ACCURACY: 12 bits/sample
+5.5) NOTE on the experimental SETUP.
+6) DATA FORMAT: iwxdta (with events)
+6.1) TOOLS to IMPORT and VISUALIZE the experiments:
+	- Labscribe2 to filter and visualize data
+	- plugin for TDMS to XLS http://zone.ni.com/devzone/cda/epd/p/id/2944
+7) OBSERVATIONS
+	no significant electrical signal observed
+	
+	

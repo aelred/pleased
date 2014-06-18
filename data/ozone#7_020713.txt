@@ -1,0 +1,37 @@
+Ozone#7
+
+0) AUTHOR: Luisa (Unifi)
+1) DATE and TIME: 02/07/2013 (start)
+2) DURATION of the experiments: about 22 hrs
+3) GOAL: show that repetitive treatments with high concentration of ozone cause variation potentials.
+4) STIMULUS: 1 minute esposition to ozone every 2 hours starting from min 48:27 (mark=ozone1), for 18 hrs (10 sprays)
+	- PATTERN: about 50 min of spontaneous activity, about 18 hrs with repetitive stimuli, and more that 3 hrs without stimuli.
+	- OZONE CONCENTRATION: T0: 14.72 ppm; T1: 4.79 ppm; T2: 2.53 ppm; T3: 1.34 ppm; T4: 0.59 ppm; T5: 0.24 ppm; T6: 0.07 ppm; 
+	T7: 0.02 ppm; T8: 0.01 ppm (data taken every 15 minutes after ozone spray)	 
+5) MATERIAL
+5.1) EXPERIMENTAL ENVIRONMENT: 
+	- plexiglass box, covered with metal fence, positioned inside an Obscured Faraday cage 
+	- temperature: 25°C
+	- humidity: start exp = 60%, end exp = 90%
+	- light: led panel grow light programmed for 12 hrs ON and 12 hrs OFF
+5.2) PLANT: 
+	- SPECIES: 2 tomatoes
+	- AGE: ~ 4 weeks 
+	- PHOTO: 0
+	- ALREADY USED FOR THE EXPERIMENTS: never
+5.3) ELECTRODES: 
+	- TYPE: needles for electromyography
+	- NUMBER: three for each plant
+	- PLACEMENT Plant 1: base of the stem=ground; medium=ch1; top= ch2; electrodes ch1 and ch2 are placed at a distance of 11 cm 		between them.
+	- PLACEMENT Plant 2: base of the stem=ground; medium=ch3; top= ch4; electrodes ch3 and ch4 are placed at a distance of 10 cm 		between them.
+
+5.4) DEVICES: 
+	- TYPE: WPI electrometer duo 773 (plant 1); WI electrometer HiZ-223 (plant 2)
+	- SAMPLING RATE: 10 sample/sec
+5.5) NOTE on the experimental SETUP.
+6) DATA FORMAT: iwxdta (with events)
+6.1) TOOLS to IMPORT and VISUALIZE the experiments:
+	- Labscribe2 to filter and visualize data
+	- plugin for TDMS to XLS http://zone.ni.com/devzone/cda/epd/p/id/2944
+7) OBSERVATIONS
+	ozone signals are particularly evident for ch2 (Plant 1).
