@@ -171,10 +171,13 @@ if __name__ == "__main__":
     path = sys.argv[1]
 
     # load all plant data in directory
+    print "Loading data"
     plants = load_all(path)
 
     # process all data
+    print "Processing data"
     datapoints = process_all(plants)
 
     # write data to file
+    print "Writing to data.csv"
     save_datapoints("data.csv", datapoints)
