@@ -162,7 +162,7 @@ def save_datapoints(path, datapoints):
         writer = csv.writer(f)
         for stim_type, data in datapoints:
             # write a row for every data point
-            writer.writerow([stim_type] + data.flatten().tolist())
+            writer.writerow([stim_type] + data.T.flatten().tolist())
 
 
 # if called from command line, load mat files from given path
