@@ -3,9 +3,13 @@ import sys
 import csv
 
 import plant
+import plot
 
 # number of data points after every stimulus to use
-window_size = 100
+window_size = 5000
+
+# offset of window from start of stimulus (positive = after)
+window_offset = 0
 
 
 def process(plant_data):
@@ -20,7 +24,11 @@ def process(plant_data):
 
     for stim in plant_data.stimuli:
         # create a window on each stimulus
-        window = plant_data.readings[stim.time:stim.time+window_size]
+        start = stim.time + window_offset
+        window = plant_data.readings[start:start+window_size]
+
+        # center around starting value of window
+        window = numpy.array([w - window[0] for w in window])
 
         # skip if window is not large enough (e.g. stimulus near end of data)
         if len(window) != window_size:
@@ -86,7 +94,7 @@ def load_datapoints(path):
             stim_type = row[0]
             data = map(float, row[1:])
             data = numpy.array(data)
-            data = numpy.reshape(data, (-1, 2))  # reshape into two columns
+            data = numpy.reshape(data, (2, -1)).T  # reshape into two columns
             datapoints.append((stim_type, data))
 
     return datapoints
@@ -108,3 +116,7 @@ if __name__ == "__main__":
     # write data to file
     print "Writing to data.csv"
     save_datapoints("data.csv", datapoints)
+
+    # create plots of each datapoints
+    print "Creating plots"
+    plot.save_datapoint_plots(datapoints)
