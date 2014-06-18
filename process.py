@@ -3,9 +3,10 @@ import sys
 import csv
 
 import plant
+import plot
 
 # number of data points after every stimulus to use
-window_size = 10000
+window_size = 5000
 
 # offset of window from start of stimulus (positive = after)
 window_offset = 0
