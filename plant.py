@@ -18,7 +18,7 @@ Stimulus = namedtuple('Stimulus', ['type', 'time'])
 
 # data on a single experiment on a single plant
 # readings is a 2D array where each column relates to an electrode on the plant
-PlantData = namedtuple('PlantData', ['readings', 'stimuli'])
+PlantData = namedtuple('PlantData', ['name', 'readings', 'stimuli'])
 
 
 def load_all(path):
@@ -93,11 +93,13 @@ def load_mat(path):
 
         i += 1
 
+    fname = os.path.basename(path)
+
     # for every pair of readings, create a plant data object
     plants = []
-    for r1, r2 in zip(readings.T[1::2], readings.T[2::2]):
+    for i, (r1, r2) in enumerate(zip(readings.T[1::2], readings.T[2::2])):
         data = numpy.array([r1, r2]).T
-        plant = PlantData(data, stimuli)
+        plant = PlantData("%s-%d" % (fname, i), data, stimuli)
         plants.append(plant)
 
     return plants
