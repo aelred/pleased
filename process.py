@@ -89,7 +89,7 @@ def load_datapoints(path):
             stim_type = row[0]
             data = map(float, row[1:])
             data = numpy.array(data)
-            data = numpy.reshape(data, (-1, 2))  # reshape into two columns
+            data = numpy.reshape(data, (2, -1)).T  # reshape into two columns
             datapoints.append((stim_type, data))
 
     return datapoints
