@@ -100,10 +100,10 @@ def load_datapoints(path):
     return datapoints
 
 
-# if called from command line, load mat files from given path
+# if called from command line, load mat files from data directory
 if __name__ == "__main__":
-    # get directory from command line
-    path = sys.argv[1]
+    # use local data directory
+    path = "data"
 
     # load all plant data in directory
     print "Loading data"
