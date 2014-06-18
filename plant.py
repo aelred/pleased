@@ -14,6 +14,7 @@ stim_types = {
 }
 
 # a stimulus on the plant, defined as a type (such as 'ozone') and time
+# the null (no) stimulus is named 'null'
 Stimulus = namedtuple('Stimulus', ['type', 'time'])
 
 # data on a single experiment on a single plant

@@ -6,10 +6,13 @@ import plant
 import plot
 
 # number of data points after every stimulus to use
-window_size = 5000
+window_size = 6000
 
 # offset of window from start of stimulus (positive = after)
-window_offset = 0
+window_offset = 60
+
+# min offset of null data from start of readings and first stimuli
+null_offset = 6000
 
 
 def process(plant_data):
@@ -22,19 +25,27 @@ def process(plant_data):
     """
     new_data = []
 
-    for stim in plant_data.stimuli:
-        # create a window on each stimulus
-        start = stim.time + window_offset
+    def add_window(start, stim_type):
         window = plant_data.readings[start:start+window_size]
 
         # center around starting value of window
         window = numpy.array([w - window[0] for w in window])
 
         # skip if window is not large enough (e.g. stimulus near end of data)
-        if len(window) != window_size:
-            continue
+        if len(window) == window_size:
+            new_data.append((stim_type, window))
 
-        new_data.append((stim.type, window))
+    for stim in plant_data.stimuli:
+        # create a window on each stimulus
+        add_window(stim.time + window_offset, stim.type)
+
+    first_stim = min([s.time for s in plant_data.stimuli])
+
+    # get null stimulus from windows before the first stimulus
+    null_start = null_offset
+    while null_start + window_size + null_offset < first_stim:
+        add_window(null_start, 'null')
+        null_start += window_size
 
     return new_data
 
