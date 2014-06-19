@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from collections import Counter
+import os
 
 
 def plant_data(pd):
@@ -16,17 +17,17 @@ def datapoint(d):
 def show():
 	plt.show()
 
-def plant_data_save(plant_list):
+def plant_data_save(plant_list, path="plant_plots"):
 	for p in plant_list:
 		plant_data(p)
-		plt.savefig("plant_plots/%s.jpg" % p.name)
+		plt.savefig(os.path.join(path, "%s.jpg" % p.name))
 		plt.clf()
 
-def datapoints_save(datapoints):
+def datapoints_save(datapoints, path="plots"):
 	type_count = Counter()
 
 	for d in datapoints:
 		type_count[d[0]] += 1
 		datapoint(d)
-		plt.savefig("plots/%s%d.png" % (d[0], type_count[d[0]]))
+		plt.savefig(os.path.join(path, "%s%d.png" % (d[0], type_count[d[0]])))
 		plt.clf()
