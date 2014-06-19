@@ -25,7 +25,7 @@ PlantData = namedtuple('PlantData', ['name', 'readings', 'stimuli'])
 
 def load_all(path):
     """
-    Load all plant data from .mat files in a directory.
+    Load all plant data from .txt files.
 
     Args:
         path: Path to a directory.
@@ -35,10 +35,9 @@ def load_all(path):
     plants = []
 
     for root, dirs, files in os.walk(path):
-        for f in files:
-            if f.endswith(".mat"):
-                mat_path = os.path.join(root, f)
-                plants += load_mat(mat_path)
+        if "blk0"  in dirs:
+            print "Reading %s" % root
+            plants += load_txt(root)
 
     return plants
 
@@ -83,7 +82,9 @@ def load_txt(path):
 
         i += 1
 
-    return format_raw("name", raw_data, stimuli)
+    fname = os.path.basename(path)
+
+    return format_raw(fname, raw_data, stimuli, sample_freq)
 
 def load_mat(path):
     """
