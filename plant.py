@@ -145,16 +145,12 @@ def format_raw(name, raw_data, raw_stimuli, sample_freq):
     readings = numpy.array(raw_data)
 
     for stim in raw_stimuli:
-        # format type
-        t = re.sub(r'_?\d+$', '', stim.type)  # remove trailing numbers
-        t = t.lower()  # convert to lowercase
-
         # find type of stimulus
         type_ = None
 
         for t, aliases in stim_types.iteritems():
             for alias in aliases:
-                if alias in t:
+                if alias in stim.type.lower():
                     type_ = t
                     break
 
