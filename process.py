@@ -14,6 +14,9 @@ window_offset = 60
 # min offset of null data from start of readings and first stimuli
 null_offset = 6000
 
+# ideal sample frequency for generated datapoints
+sample_freq = 0.1
+
 
 def process(plant_data):
     """
@@ -23,6 +26,12 @@ def process(plant_data):
         A list of tuples, where the first element of the tuple is the
         type of stimulus and the second element is the data.
     """
+
+    # if sample rate is not close to ideal sample rate, drop this data
+    if abs(plant_data.sample_freq - sample_freq) > 0.1:
+        print "Dropping data %s, bad sample rate" % plant_data.name
+        return []
+
     new_data = []
 
     def add_window(start, stim_type):
@@ -130,5 +139,5 @@ if __name__ == "__main__":
 
     # create plots of each datapoint and plant
     print "Creating plots"
-    plot.save_datapoint_plots(datapoints)
     plot.save_plant_plots(plants)
+    plot.save_datapoint_plots(datapoints)

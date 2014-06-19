@@ -20,7 +20,8 @@ Stimulus = namedtuple('Stimulus', ['type', 'time'])
 
 # data on a single experiment on a single plant
 # readings is a 2D array where each column relates to an electrode on the plant
-PlantData = namedtuple('PlantData', ['name', 'readings', 'stimuli'])
+PlantData = namedtuple('PlantData', 
+                       ['name', 'readings', 'stimuli', 'sample_freq'])
 
 
 def load_all(path):
@@ -56,15 +57,21 @@ def load_txt(path):
     i = 0
     mark_offset = 0
 
+    # read sample frequency from settings file
+    with file(os.path.join(path, "blk0", "blk_setting.txt"), 'r') as f:
+        reader = csv.reader(f, delimiter='\t')
+        for row in reader:
+            if row[0] == 'SPEED ':
+                sample_freq = 1.0 / float(row[1])
+                break
+
     while os.path.exists(os.path.join(path, "blk%d" % i)):
-        print "Reading blk%d" % i
 
         blk = os.path.join(path, "blk%d" % i)
         data = os.path.join(blk, "data2.txt")
         marks = os.path.join(blk, "marks.txt")
 
         with file(marks, 'r') as f:
-            print "Reading %s" % marks
             reader = csv.reader(f, delimiter=',')
             next(reader)  # skip header
             for row in reader:
@@ -72,7 +79,6 @@ def load_txt(path):
                                         int(row[2].strip()) + mark_offset))
 
         with file(data, 'r') as f:
-            print "Reading %s" % data
             reader = csv.reader(f, delimiter='\t')
             for num, row in enumerate(reader):
                 new_data = row[0:-1]  # remove empty last column
@@ -99,10 +105,10 @@ def load_mat(path):
     # get astonishingly poorly-named matrix of readings
     readings = mat['b\x001\x00\x00\x00']
 
-    # calculate sample rate
+    # calculate sample frequency
     total_time = readings[-1][0] - readings[0][0]
-    sample_rate = total_time / len(readings)
-    # TODO: Worry about when the sample rate is different (interpolate?)
+    sample_freq = total_time / len(readings)
+    # TODO: Worry about when the sample frequency is different (interpolate?)
 
     # get all labelled stimuli
     stimuli = []
@@ -114,7 +120,7 @@ def load_mat(path):
         time = stim_data[0][0][0][0][0]
 
         # calculate index of readings array from time and time step per reading
-        index = time / sample_rate
+        index = time / sample_freq
 
         stimuli.append(Stimulus(name, index))
 
@@ -122,9 +128,9 @@ def load_mat(path):
 
     fname = os.path.basename(path)
 
-    return format_raw(fname, readings[:,1:], stimuli)
+    return format_raw(fname, readings[:,1:], stimuli, sample_freq)
 
-def format_raw(name, raw_data, raw_stimuli):
+def format_raw(name, raw_data, raw_stimuli, sample_freq):
     """
     Process raw data from a file into plant data.
 
@@ -163,7 +169,7 @@ def format_raw(name, raw_data, raw_stimuli):
     plants = []
     for i, (r1, r2) in enumerate(zip(readings.T[0::2], readings.T[1::2])):
         data = numpy.array([r1, r2]).T
-        plant = PlantData("%s-%d" % (name, i), data, stimuli)
+        plant = PlantData("%s-%d" % (name, i), data, stimuli, sample_freq)
         plants.append(plant)
 
     return plants
