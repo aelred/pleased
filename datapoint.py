@@ -2,9 +2,6 @@ import numpy
 import sys
 import csv
 
-import plant
-import plot
-
 # number of data points after every stimulus to use
 window_size = 6000
 
@@ -18,7 +15,7 @@ null_offset = 6000
 sample_freq = 0.1
 
 
-def process(plant_data):
+def generate(plant_data):
     """
     Process plant data to produce a list of classified data points.
 
@@ -59,7 +56,7 @@ def process(plant_data):
     return new_data
 
 
-def process_all(plants):
+def generate_all(plants):
     """
     Process a list of plant data.
 
@@ -72,12 +69,12 @@ def process_all(plants):
     new_data = []
 
     for plant_data in plants:
-        new_data += process(plant_data)
+        new_data += generate(plant_data)
 
     return new_data
 
 
-def save_datapoints(path, datapoints):
+def save(path, datapoints):
     """
     Save data points to a CSV file.
 
@@ -95,7 +92,7 @@ def save_datapoints(path, datapoints):
             writer.writerow([stim_type] + data.T.flatten().tolist())
 
 
-def load_datapoints(path):
+def load(path):
     """
     Load data points from a csv file.
 
@@ -118,26 +115,3 @@ def load_datapoints(path):
             datapoints.append((stim_type, data))
 
     return datapoints
-
-
-# if called from command line, load mat files from data directory
-if __name__ == "__main__":
-    # use local data directory
-    path = "."
-
-    # load all plant data in directory
-    print "Loading data"
-    plants = plant.load_all(path)
-
-    # process all data
-    print "Processing data"
-    datapoints = process_all(plants)
-
-    # write data to file
-    print "Writing to data.csv"
-    save_datapoints("data.csv", datapoints)
-
-    # create plots of each datapoint and plant
-    print "Creating plots"
-    plot.save_plant_plots(plants)
-    plot.save_datapoint_plots(datapoints)
