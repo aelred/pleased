@@ -24,7 +24,7 @@ PlantData = namedtuple('PlantData',
                        ['name', 'readings', 'stimuli', 'sample_freq'])
 
 
-def load_all(path):
+def load_all(path="."):
     """
     Load all plant data from .txt files.
 

@@ -4,12 +4,9 @@ import plot
 
 # if called from command line, load mat files from data directory
 if __name__ == "__main__":
-    # use local data directory
-    path = "."
-
     # load all plant data in directory
     print "Loading data"
-    plants = plant.load_all(path)
+    plants = plant.load_all()
 
     # process all data
     print "Processing data"
