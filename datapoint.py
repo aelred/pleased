@@ -157,15 +157,15 @@ def balance(datapoints):
         return d[0]
 
     # group datapoints by type
-    def group():
+    def groups():
         return groupby(sorted(datapoints, key=by_type), key=by_type)
 
     # find smallest datapoint type to decide how to balance
-    group_size = min(len(list(g[1])) for g in group())
+    group_size = min(len(list(g[1])) for g in groups())
     print group_size
 
     # pick a random sample from each group
-    samples = [random.sample(list(g[1]), group_size) for g in group()]
+    samples = [random.sample(list(g[1]), group_size) for g in groups()]
 
     # concatenate all samples and return
     return list(chain(*samples))
