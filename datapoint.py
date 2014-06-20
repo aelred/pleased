@@ -2,6 +2,8 @@ import numpy
 import sys
 import csv
 from scipy.optimize import curve_fit
+from itertools import groupby, chain
+import random
 
 # number of data points after every stimulus to use
 window_size = 12000
@@ -142,3 +144,28 @@ def detrend(datapoint):
     de_data = numpy.array([detrend_column(data[:,0]), detrend_column(data[:,1])])
 
     return (datapoint[0], de_data.T)
+
+
+def balance(datapoints):
+    """
+    Args:
+        datapoints: A list of datapoints to balance.
+    Returns: A subset with the same number of every represented type.
+    """
+
+    def by_type(d):
+        return d[0]
+
+    # group datapoints by type
+    def group():
+        return groupby(sorted(datapoints, key=by_type), key=by_type)
+
+    # find smallest datapoint type to decide how to balance
+    group_size = min(len(list(g[1])) for g in group())
+    print group_size
+
+    # pick a random sample from each group
+    samples = [random.sample(list(g[1]), group_size) for g in group()]
+
+    # concatenate all samples and return
+    return list(chain(*samples))

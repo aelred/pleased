@@ -14,7 +14,9 @@ if __name__ == "__main__":
 	train = generate_all(train_plants)
 	valid = generate_all(valid_plants)
 
-	# TODO: balance datasets
+	# balance the datasets
+	train = datapoint.balance(train)
+	valid = datapoint.balance(valid)
 
 	# TODO: Split train into sub-train/test sets
 
