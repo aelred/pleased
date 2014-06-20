@@ -1,4 +1,5 @@
 from sklearn.cross_validation import train_test_split
+import random
 
 import plant
 import datapoint
@@ -8,11 +9,14 @@ if __name__ == "__main__":
 	plants = plant.load_all()
 
 	# split plant data into training and validation sets
-	train_plants, valid_plants = train_test_split(plants)
+	random.shuffle(plants)
+	train_len = int(0.75 * len(plants))
+	train_plants = plants[:train_len]
+	valid_plants = plants[train_len:]
 
 	def preprocess(plants):
 		# extract windows from plant data
-		datapoints = generate_all(plants)
+		datapoints = datapoint.generate_all(plants)
 		# balance the dataset
 		balanced = datapoint.balance(datapoints)
 

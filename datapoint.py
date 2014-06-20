@@ -162,7 +162,6 @@ def balance(datapoints):
 
     # find smallest datapoint type to decide how to balance
     group_size = min(len(list(g[1])) for g in groups())
-    print group_size
 
     # pick a random sample from each group
     samples = [random.sample(list(g[1]), group_size) for g in groups()]
