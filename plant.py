@@ -4,6 +4,7 @@ import numpy
 import re
 import os
 import csv
+import pickle
 
 stim_types = {
     'water': ['acqua piante'],
@@ -33,12 +34,23 @@ def load_all(path="."):
     Returns: A list of PlantData
     """
 
+    # first check for previously generated plant data (for quicker loading)
+    plant_file = os.path.join(path, "plant_data")
+    if os.path.isfile(plant_file):
+        with file(plant_file, 'r') as f:
+            print "Loading from generated file %s" % plant_file
+            return pickle.load(f)
+
     plants = []
 
     for root, dirs, files in os.walk(path):
         if "blk0"  in dirs:
             print "Reading %s" % root
             plants += load_txt(root)
+
+    # save generated plant data to pickle file for faster loading
+    with file(plant_file, 'w') as f:
+        pickle.dump(plants, f)
 
     return plants
 
