@@ -146,6 +146,16 @@ def detrend(datapoint):
     return (datapoint[0], de_data.T)
 
 
+def post_stimulus(datapoint, offset=0.0):
+    """
+    Params:
+        datapoint: The datapoint to operate on.
+        offset: The amount to offset the window from the start of stimulus.
+    Returns: The datapoint with any pre-stimulus data removed.
+    """
+    return (datapoint[0], datapoint[1][window_offset-offset:])
+
+
 def balance(datapoints):
     """
     Args:
