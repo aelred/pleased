@@ -10,13 +10,19 @@ if __name__ == "__main__":
 	# split plant data into training and validation sets
 	train_plants, valid_plants = train_test_split(plants)
 
-	# extract windows from plant data
-	train = generate_all(train_plants)
-	valid = generate_all(valid_plants)
+	def preprocess(plants):
+		# extract windows from plant data
+		datapoints = generate_all(plants)
+		# balance the dataset
+		balanced = datapoint.balance(datapoints)
 
-	# balance the datasets
-	train = datapoint.balance(train)
-	valid = datapoint.balance(valid)
+		# extract features and labels
+		labels = [d[0] for d in datapoints]
+		data = [d[1] for d in datapoints]
+		return data, labels
+
+	train = preprocess(train_plants)
+	valid = preprocess(valid_plants)
 
 	# TODO: Split train into sub-train/test sets
 
