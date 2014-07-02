@@ -29,5 +29,5 @@ def datapoints_save(datapoints, path="plots"):
 	for d in datapoints:
 		type_count[d[0]] += 1
 		datapoint(d)
-		plt.savefig(os.path.join(path, "%s%d.png" % (d[0], type_count[d[0]])))
+		plt.savefig(os.path.join(path, "%s_%d.png" % (d[0], type_count[d[0]])))
 		plt.clf()

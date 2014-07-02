@@ -2,18 +2,26 @@ from sklearn.cross_validation import train_test_split, cross_val_score
 from sklearn.base import BaseEstimator
 from sklearn.svm import SVC
 from sklearn.lda import LDA
+from sklearn.qda import QDA
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 import random
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from scipy.signal import decimate
+from scipy.optimize import curve_fit
+from itertools import chain
 
 import plant
 import datapoint
 
 
+labels = ['null', 'ozone', 'H2SO4']
+
+
 class FeatureExtractor(BaseEstimator):
+	""" Extracts features from each datapoint. """
 
 	def __init__(self, extractor):
 		self.extractor = extractor
@@ -23,6 +31,87 @@ class FeatureExtractor(BaseEstimator):
 
 	def fit(self, X, y):
 		return self
+
+
+class FeatureWindow(BaseEstimator):
+	""" Extracts features from each window in a datapoint. """
+
+	def __init__(self, extractor):
+		def extract_windows(x):
+			# perform extractor on every window and then chain them together
+			return np.array(chain([extractor(xx) for xx in x]))
+
+		self.extractor = FeatureExtractor(extract_windows).transform
+
+
+class MeanSubtractTransform(FeatureExtractor):
+	""" Subtracts the mean of the data from every point. """
+
+	def __init__(self):
+		def mean_subtract(x):
+			m = mean(x)
+			return [xx-m for xx in x]
+		self.extractor = mean_subtract
+
+
+class ClipTransform(FeatureExtractor):
+	""" Cut some amount from the end of the data. """
+
+	def __init__(self, size):
+		self.extractor = lambda x: x[0:len(x)*size]
+
+
+class DecimateTransform(FeatureExtractor):
+	""" Shrink signal by applying a low-pass filter. """
+
+	def __init__(self, factor):
+		self.extractor = lambda x: decimate(x, factor, ftype='fir')
+
+
+class WindowTransform(FeatureExtractor):
+	""" Apply a function to overlapping windows. """
+
+	def __init__(self, f, N, hanning=True):
+		def window(x):
+			window_size = len(x) / N
+			step = window_size / 2
+
+			windows = []
+			for i in range(0, len(x)-window_size, step):
+				window = x[i:i+window_size]
+				if hanning:
+					window *= np.hanning
+				windows.append(f(window))
+
+			return np.concatenate(windows)
+
+		self.extractor = window
+
+
+class DetrendTransform(FeatureExtractor):
+	""" Remove any linear trends in the data. """
+
+	def __init__(self):
+
+		def linear(x, m, c):
+        	return map(lambda xx: m*xx + c, x)
+
+		def detrend(x):
+			# find best fitting curve to pre-stimulus window
+	        times = range(0, len(x))
+	        params, cov = curve_fit(linear, times[0:-datapoint.window_offset], 
+	                                x[0:-datapoint.window_offset], (0, 0))
+	        # subtract extrapolated curve from data to produce new dataset
+	        return x - linear(times, *params)
+
+	    self.extractor = detrend
+
+
+class PostStimulusTransform(FeatureExtractor):
+	""" Remove any pre-stimulus data from the datapoint. """
+
+	def __init__(self, offset=0.0):
+		self.extractor = lambda x: x[datapoint.window_offset-offset:]
 
 
 def features(x):
@@ -78,14 +167,13 @@ def preprocess(plants):
 	# extract windows from plant data
 	datapoints = datapoint.generate_all(plants)
 	# filter to relevant datapoint types
-	datapoints = datapoint.filter_types(datapoints, ["null", "ozone", "H2SO"])
+	datapoints = datapoint.filter_types(datapoints, labels)
 	# remove any pre-stimulus data
 	datapoints = map(datapoint.post_stimulus, datapoints)
 
 	# balance the dataset
 	datapoints = datapoint.balance(datapoints)
 
-	# extract features and labels
 	return datapoints
 
 def extract(datapoints):
@@ -132,9 +220,10 @@ if __name__ == "__main__":
 	X_valid, y_valid = extract(preprocess(valid_plants))
 
 	# set up pipeline
+	window = FeatureExtractor(lambda x: window(x, 6000, 600))
 	extractor = FeatureExtractor(elec_avg)
 	scaler = StandardScaler()
-	classifier = LDA()
+	classifier = QDA()
 	pipeline = Pipeline([('extractor', extractor), 
 						 ('scaler', scaler), 
 						 ('classifier', classifier)])

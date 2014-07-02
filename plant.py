@@ -8,7 +8,7 @@ import pickle
 
 stim_types = {
     'water': ['acqua piante'],
-    'H2SO': ['h2so'],
+    'H2SO4': ['h2so4'],
     'ozone': ['ozone', 'ozono', 'o3'],
     'NaCL': ['nacl'],
     'light-on': ['light-on'],
@@ -177,7 +177,7 @@ def format_raw(name, raw_data, raw_stimuli, sample_freq):
     plants = []
     for i, (r1, r2) in enumerate(zip(readings.T[0::2], readings.T[1::2])):
         data = numpy.array([r1, r2]).T
-        plant = PlantData("%s-%d" % (name, i), data, stimuli, sample_freq)
+        plant = PlantData("%s_%d" % (name, i), data, stimuli, sample_freq)
         plants.append(plant)
 
     return plants

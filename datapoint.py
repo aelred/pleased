@@ -6,7 +6,7 @@ from itertools import groupby, chain
 import random
 
 # number of data points after every stimulus to use
-window_size = 12000
+window_size = 36000
 
 # offset of window from start of stimulus (positive = after)
 window_offset = -6000
@@ -36,13 +36,13 @@ def generate(plant_data):
 
     def add_window(start, stim_type):
         window = plant_data.readings[start:start+window_size]
-
-        # center around starting value of window
-        window = numpy.array([w - window[0] for w in window])
+        datapoint = (stim_type, window)
 
         # skip if window is not large enough (e.g. stimulus near end of data)
         if len(window) == window_size:
-            new_data.append((stim_type, window))
+            # detrend window
+            datapoint = detrend(datapoint)
+            new_data.append(datapoint)
 
     for stim in plant_data.stimuli:
         # create a window on each stimulus
