@@ -63,7 +63,7 @@ def generate_all(plants):
     """
     Process a list of plant data.
 
-    Args:
+    Params:
         plants: A list of PlantData
     Returns:
         A list of tuples, where the first element of the tuple is the type of
@@ -81,7 +81,7 @@ def save(path, datapoints):
     """
     Save data points to a CSV file.
 
-    Args:
+    Params:
         path: File to save data points to.
         datapoints:
             A list of tuples, where the first element of the tuple is the type
@@ -99,7 +99,7 @@ def load(path):
     """
     Load data points from a csv file.
 
-    Args:
+    Params:
         path: File to load data points from.
     Returns:
         A list of tuples, where the first element of the tuple is the type of
@@ -124,7 +124,7 @@ def detrend(datapoint):
     """
     Eliminate linear trends in a window by examining time before stimulus occurs.
 
-    Args:
+    Params:
         datapoint: The datapoint to detrend.
     Returns: A new detrended datapoint.
     """
