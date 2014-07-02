@@ -156,25 +156,40 @@ def post_stimulus(datapoint, offset=0.0):
     return (datapoint[0], datapoint[1][window_offset-offset:])
 
 
-def balance(datapoints):
+def filter_types(datapoints, types):
     """
-    Args:
-        datapoints: A list of datapoints to balance.
-    Returns: A subset with the same number of every represented type.
+    Params:
+        datapoints: A list of datapoints to filter.
+        classes: The allowed stimulus types.
+    Returns: All datapoints of the given types.
+    """
+    return filter((lambda d: d[0] in types), datapoints)
+
+def group_types(datapoints):
+    """
+    Params:
+        datapoints: A list of datapoints to group.
+    Returns: The datapoints grouped together by type.
     """
 
     def by_type(d):
         return d[0]
 
-    # group datapoints by type
-    def groups():
-        return groupby(sorted(datapoints, key=by_type), key=by_type)
+    return groupby(sorted(datapoints, key=by_type), key=by_type)
+
+def balance(datapoints):
+    """
+    Params:
+        datapoints: A list of datapoints to balance.
+    Returns: A subset with the same number of every represented type.
+    """
 
     # find smallest datapoint type to decide how to balance
-    group_size = min(len(list(g[1])) for g in groups())
+    group_size = min(len(list(g[1])) for g in group_types(datapoints))
 
     # pick a random sample from each group
-    samples = [random.sample(list(g[1]), group_size) for g in groups()]
+    samples = [random.sample(list(g[1]), group_size) 
+               for g in group_types(datapoints)]
 
     # concatenate all samples and return
     return list(chain(*samples))
