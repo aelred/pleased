@@ -1,26 +1,40 @@
 from sklearn.cross_validation import train_test_split, cross_val_score
 from sklearn.base import BaseEstimator
 from sklearn.svm import SVC
+from sklearn.lda import LDA
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 import random
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 
 import plant
 import datapoint
 
 
-class FeatureEnsemble(BaseEstimator):
+class FeatureExtractor(BaseEstimator):
+
+	def __init__(self, extractor):
+		self.extractor = extractor
 
 	def transform(self, X):
-		Xt = []
-		for x in X:
-			x = elec_avg(x)
-			noise = mean(map(abs, differential(differential(x))))
-			variance = var(x)
-			Xt.append([noise, variance])
-		return Xt
+		return np.array([self.extractor(x) for x in X], ndmin=2)
 
 	def fit(self, X, y):
 		return self
+
+
+def features(x):
+	"""
+	Returns: A list of features extracted from the datapoint x.
+	"""
+	x = elec_avg(x)
+	diff = mean(map(abs, differential(x)))
+	noise = mean(map(abs, differential(differential(x))))
+	std = stdev(x)
+	stdiff = stdev(differential(x))
+	return [diff, noise, std, stdiff]
 
 
 def elec_avg(x):
@@ -56,19 +70,52 @@ def var(x):
 	m = mean(x)
 	return sum([(xx-m)**2 for xx in x]) / len(x)
 
+def stdev(x):
+	""" Returns: The standard deviation of x. """
+	return var(x)**0.5
+
 def preprocess(plants):
 	# extract windows from plant data
 	datapoints = datapoint.generate_all(plants)
-	# balance the dataset
-	datapoints = datapoint.balance(datapoints)
-
+	# filter to relevant datapoint types
+	datapoints = datapoint.filter_types(datapoints, ["null", "ozone", "H2SO"])
 	# remove any pre-stimulus data
 	datapoints = map(datapoint.post_stimulus, datapoints)
 
+	# balance the dataset
+	datapoints = datapoint.balance(datapoints)
+
 	# extract features and labels
+	return datapoints
+
+def extract(datapoints):
+	datapoints = list(datapoints)
 	labels = [d[0] for d in datapoints]
 	data = [d[1] for d in datapoints]
-	return data, labels
+	return data, np.asarray(labels)
+
+def plot_features():
+	# load plant data from files
+	plants = plant.load_all()
+	# preprocess data
+	datapoints = preprocess(plants)
+
+	# scale data
+	X, y = extract(datapoints)
+	X = FeatureExtractor(features).transform(X)
+	scaler = StandardScaler()
+	scaler.fit(X)
+
+	groups = lambda: datapoint.group_types(datapoints)
+
+	# visualize the feature extractor
+	colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups())))))
+	for dtype, points in groups():
+		X, y = extract(points)
+		X = FeatureExtractor(features).transform(X)
+		X = scaler.transform(X)
+		plt.scatter(X[:,0], X[:,1], c=next(colors))
+	plt.show()
 
 if __name__ == "__main__":
 	# load plant data from files
@@ -81,13 +128,16 @@ if __name__ == "__main__":
 	valid_plants = plants[train_len:]
 
 	# get X data and y labels
-	X_train, y_train = preprocess(train_plants)
-	X_valid, y_valid = preprocess(valid_plants)
+	X_train, y_train = extract(preprocess(train_plants))
+	X_valid, y_valid = extract(preprocess(valid_plants))
 
 	# set up pipeline
-	extractor = FeatureEnsemble()
-	classifier = SVC(kernel='linear')
-	pipeline = Pipeline([('extractor', extractor), ('classifier', classifier)])
+	extractor = FeatureExtractor(elec_avg)
+	scaler = StandardScaler()
+	classifier = LDA()
+	pipeline = Pipeline([('extractor', extractor), 
+						 ('scaler', scaler), 
+						 ('classifier', classifier)])
 
 	# perform 5-fold cross validation on pipeline
 	score = cross_val_score(pipeline, X_train, y_train, cv=5)
