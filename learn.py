@@ -33,17 +33,6 @@ class FeatureExtractor(BaseEstimator):
 		return self
 
 
-class FeatureWindow(BaseEstimator):
-	""" Extracts features from each window in a datapoint. """
-
-	def __init__(self, extractor):
-		def extract_windows(x):
-			# perform extractor on every window and then chain them together
-			return np.array(chain([extractor(xx) for xx in x]))
-
-		self.extractor = FeatureExtractor(extract_windows).transform
-
-
 class MeanSubtractTransform(FeatureExtractor):
 	""" Subtracts the mean of the data from every point. """
 
@@ -94,23 +83,24 @@ class DetrendTransform(FeatureExtractor):
 	def __init__(self):
 
 		def linear(x, m, c):
-        	return map(lambda xx: m*xx + c, x)
+			return map(lambda xx: m*xx + c, x)
 
 		def detrend(x):
 			# find best fitting curve to pre-stimulus window
-	        times = range(0, len(x))
-	        params, cov = curve_fit(linear, times[0:-datapoint.window_offset], 
-	                                x[0:-datapoint.window_offset], (0, 0))
-	        # subtract extrapolated curve from data to produce new dataset
-	        return x - linear(times, *params)
+			times = range(0, len(x))
+			params, cov = curve_fit(linear, times[0:-datapoint.window_offset], 
+									x[0:-datapoint.window_offset], (0, 0))
+			# subtract extrapolated curve from data to produce new dataset
+			return x - linear(times, *params)
 
-	    self.extractor = detrend
+		self.extractor = detrend
 
 
 class PostStimulusTransform(FeatureExtractor):
 	""" Remove any pre-stimulus data from the datapoint. """
 
-	def __init__(self, offset=0.0):
+	def __init__(self):
+		offset=0
 		self.extractor = lambda x: x[datapoint.window_offset-offset:]
 
 
@@ -168,9 +158,6 @@ def preprocess(plants):
 	datapoints = datapoint.generate_all(plants)
 	# filter to relevant datapoint types
 	datapoints = datapoint.filter_types(datapoints, labels)
-	# remove any pre-stimulus data
-	datapoints = map(datapoint.post_stimulus, datapoints)
-
 	# balance the dataset
 	datapoints = datapoint.balance(datapoints)
 
@@ -220,13 +207,11 @@ if __name__ == "__main__":
 	X_valid, y_valid = extract(preprocess(valid_plants))
 
 	# set up pipeline
-	window = FeatureExtractor(lambda x: window(x, 6000, 600))
-	extractor = FeatureExtractor(elec_avg)
-	scaler = StandardScaler()
-	classifier = QDA()
-	pipeline = Pipeline([('extractor', extractor), 
-						 ('scaler', scaler), 
-						 ('classifier', classifier)])
+	pipeline = Pipeline([('elec_avg', FeatureExtractor(elec_avg)),
+						 ('detrend', DetrendTransform()),
+						 ('poststim', PostStimulusTransform()),
+						 ('scaler', StandardScaler()), 
+						 ('classifier', LDA())])
 
 	# perform 5-fold cross validation on pipeline
 	score = cross_val_score(pipeline, X_train, y_train, cv=5)

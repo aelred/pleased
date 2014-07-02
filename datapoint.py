@@ -40,8 +40,6 @@ def generate(plant_data):
 
         # skip if window is not large enough (e.g. stimulus near end of data)
         if len(window) == window_size:
-            # detrend window
-            datapoint = detrend(datapoint)
             new_data.append(datapoint)
 
     for stim in plant_data.stimuli:
@@ -118,43 +116,6 @@ def load(path):
             datapoints.append((stim_type, data))
 
     return datapoints
-
-
-def detrend(datapoint):
-    """
-    Eliminate linear trends in a window by examining time before stimulus occurs.
-
-    Params:
-        datapoint: The datapoint to detrend.
-    Returns: A new detrended datapoint.
-    """
-    data = datapoint[1]
-
-    def linear(xs, m, c):
-        return map(lambda x: m*x + c, xs)
-
-    def detrend_column(col):
-        # find best fitting curve to pre-stimulus window
-        times = range(0, len(col))
-        params, cov = curve_fit(linear, times[0:-window_offset], 
-                                col[0:-window_offset], (0, 0))
-        # subtract extrapolated curve from data to produce new dataset
-        return col - linear(times, *params)
-
-    de_data = numpy.array([detrend_column(data[:,0]), detrend_column(data[:,1])])
-
-    return (datapoint[0], de_data.T)
-
-
-def post_stimulus(datapoint, offset=0.0):
-    """
-    Params:
-        datapoint: The datapoint to operate on.
-        offset: The amount to offset the window from the start of stimulus.
-    Returns: The datapoint with any pre-stimulus data removed.
-    """
-    return (datapoint[0], datapoint[1][window_offset-offset:])
-
 
 def filter_types(datapoints, types):
     """
