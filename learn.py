@@ -23,8 +23,9 @@ labels = ['null', 'ozone', 'H2SO4']
 class FeatureExtractor(BaseEstimator):
 	""" Extracts features from each datapoint. """
 
-	def __init__(self, extractor):
-		self.extractor = extractor
+	def __init__(self, extractor=None):
+		if extractor is not None:
+			self.extractor = extractor
 
 	def transform(self, X):
 		return np.array([self.extractor(x) for x in X], ndmin=2)
@@ -36,72 +37,75 @@ class FeatureExtractor(BaseEstimator):
 class MeanSubtractTransform(FeatureExtractor):
 	""" Subtracts the mean of the data from every point. """
 
-	def __init__(self):
-		def mean_subtract(x):
-			m = mean(x)
-			return [xx-m for xx in x]
-		self.extractor = mean_subtract
+	def extractor(self, x):
+		m = mean(x)
+		return [xx-m for xx in x]
 
 
 class ClipTransform(FeatureExtractor):
 	""" Cut some amount from the end of the data. """
 
 	def __init__(self, size):
-		self.extractor = lambda x: x[0:len(x)*size]
+		self.size = size
+
+	def extractor(self, x):
+		return x[0:int(len(x)*self.size)]
 
 
 class DecimateTransform(FeatureExtractor):
 	""" Shrink signal by applying a low-pass filter. """
 
 	def __init__(self, factor):
-		self.extractor = lambda x: decimate(x, factor, ftype='fir')
+		self.factor = factor
+
+	def extractor(self, x):
+		return decimate(x, self.factor, ftype='fir')
 
 
 class WindowTransform(FeatureExtractor):
 	""" Apply a function to overlapping windows. """
 
 	def __init__(self, f, N, hanning=True):
-		def window(x):
-			window_size = len(x) / N
-			step = window_size / 2
+		self.f = f
+		self.N = N
+		self.hanning = hanning
 
-			windows = []
-			for i in range(0, len(x)-window_size, step):
-				window = x[i:i+window_size]
-				if hanning:
-					window *= np.hanning
-				windows.append(f(window))
+	def extractor(self, x):
+		window_size = len(x) / self.N
+		step = window_size / 2
 
-			return np.concatenate(windows)
+		windows = []
+		for i in range(0, len(x)-window_size, step):
+			window = x[i:i+window_size]
+			if self.hanning:
+				window *= np.hanning
+			windows.append(self.f(window))
 
-		self.extractor = window
+		return np.concatenate(windows)
 
 
 class DetrendTransform(FeatureExtractor):
 	""" Remove any linear trends in the data. """
 
-	def __init__(self):
-
+	def extractor(self, x):
 		def linear(x, m, c):
 			return map(lambda xx: m*xx + c, x)
 
-		def detrend(x):
-			# find best fitting curve to pre-stimulus window
-			times = range(0, len(x))
-			params, cov = curve_fit(linear, times[0:-datapoint.window_offset], 
-									x[0:-datapoint.window_offset], (0, 0))
-			# subtract extrapolated curve from data to produce new dataset
-			return x - linear(times, *params)
-
-		self.extractor = detrend
-
+		# find best fitting curve to pre-stimulus window
+		times = range(0, len(x))
+		params, cov = curve_fit(linear, times[0:-datapoint.window_offset], 
+								x[0:-datapoint.window_offset], (0, 0))
+		# subtract extrapolated curve from data to produce new dataset
+		return x - linear(times, *params)
 
 class PostStimulusTransform(FeatureExtractor):
 	""" Remove any pre-stimulus data from the datapoint. """
 
-	def __init__(self):
-		offset=0
-		self.extractor = lambda x: x[datapoint.window_offset-offset:]
+	def __init__(self, offset):
+		self.offset = offset
+
+	def extractor(self, x):
+		return x[datapoint.window_offset-self.offset:]
 
 
 def features(x):
@@ -209,7 +213,7 @@ if __name__ == "__main__":
 	# set up pipeline
 	pipeline = Pipeline([('elec_avg', FeatureExtractor(elec_avg)),
 						 ('detrend', DetrendTransform()),
-						 ('poststim', PostStimulusTransform()),
+						 ('poststim', PostStimulusTransform(0)),
 						 ('scaler', StandardScaler()), 
 						 ('classifier', LDA())])
 
