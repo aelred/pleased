@@ -216,7 +216,6 @@ if __name__ == "__main__":
     # set up pipeline
     ensemble = FeatureEnsembleTransform()
     pipeline = Pipeline([('elec_avg', ElectrodeAvgTransform()),
-                         ('decimate', DecimateTransform(10)),
                          ('detrend', DetrendTransform()),
                          ('poststim', PostStimulusTransform(60)),
                          ('feature', WindowTransform(ensemble.extractor, 10, False)),
