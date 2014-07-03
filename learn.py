@@ -71,11 +71,11 @@ class WindowTransform(FeatureExtractor):
 		self.hanning = hanning
 
 	def extractor(self, x):
-		window_size = len(x) / self.N
+		window_size = 2 * len(x) / (self.N + 1)
 		step = window_size / 2
 
 		windows = []
-		for i in range(0, len(x)-window_size, step):
+		for i in range(0, len(x)-window_size+1, step):
 			window = x[i:i+window_size]
 			if self.hanning:
 				window *= np.hanning
