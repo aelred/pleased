@@ -214,17 +214,16 @@ if __name__ == "__main__":
 	X_valid, y_valid = extract(preprocess(valid_plants))
 
 	# set up pipeline
+	ensemble = FeatureEnsembleTransform()
 	pipeline = Pipeline([('elec_avg', ElectrodeAvgTransform()),
 						 ('decimate', DecimateTransform(10)),
 						 ('detrend', DetrendTransform()),
 						 ('poststim', PostStimulusTransform(60)),
-						 ('feature', FeatureEnsembleTransform()),
+						 ('feature', WindowTransform(ensemble.extractor, 10, False)),
 						 ('scaler', StandardScaler()), 
 						 ('lda', LDA())])
 
-	params = [{
-		'lda__n_components': [1, 2, 3]
-	}]
+	params = [{}]
 
 	# perform grid search on pipeline, selecting best parameters from training data
 	grid = GridSearchCV(pipeline, params, cv=5, verbose=2)
