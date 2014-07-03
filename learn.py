@@ -213,14 +213,27 @@ if __name__ == "__main__":
 	X_valid, y_valid = extract(preprocess(valid_plants))
 
 	# set up pipeline
-	pipeline = Pipeline([('elec_avg', FeatureExtractor(elec_avg)),
+	pipeline = Pipeline([('elec_avg', ElectrodeAvgTransform()),
 						 ('detrend', DetrendTransform()),
 						 ('poststim', PostStimulusTransform(0)),
 						 ('scaler', StandardScaler()), 
 						 ('classifier', LDA())])
 
 	# perform 5-fold cross validation on pipeline
-	score = cross_val_score(pipeline, X_train, y_train, cv=5)
-	print score
+	cross_val_score = cross_val_score(pipeline, X_train, y_train, cv=5)
 
-	# TODO: Validate on train/validate sets
+	print "Cross-validation results:"
+	print cross_val_score
+
+	# fit a classifier to the whole of the training data
+	classifier = pipeline.fit(X_train, y_train)
+
+	# test the classifier on training and validation data sets
+	train_score = pipeline.score(X_train, y_train)
+	valid_score = pipeline.score(X_valid, y_valid)
+
+	print "Training data results:"
+	print train_score
+
+	print "Validation data results:"
+	print valid_score
