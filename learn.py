@@ -215,15 +215,19 @@ if __name__ == "__main__":
 
 	# set up pipeline
 	pipeline = Pipeline([('elec_avg', ElectrodeAvgTransform()),
+						 ('decimate', DecimateTransform(10)),
 						 ('detrend', DetrendTransform()),
-						 ('poststim', PostStimulusTransform()),
+						 ('poststim', PostStimulusTransform(60)),
+						 ('feature', FeatureEnsembleTransform()),
 						 ('scaler', StandardScaler()), 
-						 ('classifier', LDA())])
+						 ('lda', LDA())])
 
-	params = [{'poststim__offset': [0, 600, 6000]}]
+	params = [{
+		'lda__n_components': [1, 2, 3]
+	}]
 
 	# perform grid search on pipeline, selecting best parameters from training data
-	grid = GridSearchCV(pipeline, params, cv=5)
+	grid = GridSearchCV(pipeline, params, cv=5, verbose=2)
 	grid.fit(X_train, y_train)
 	classifier = grid.best_estimator_
 
