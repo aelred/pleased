@@ -108,34 +108,29 @@ class PostStimulusTransform(FeatureExtractor):
 		return x[datapoint.window_offset-self.offset:]
 
 
-def features(x):
-	"""
-	Returns: A list of features extracted from the datapoint x.
-	"""
-	x = elec_avg(x)
-	diff = mean(map(abs, differential(x)))
-	noise = mean(map(abs, differential(differential(x))))
-	std = stdev(x)
-	stdiff = stdev(differential(x))
-	return [diff, noise, std, stdiff]
+class ElectrodeAvgTransform(FeatureExtractor):
+	""" Take the average of the two electrode values. """
+
+	def extractor(self, x):
+		return [(xx[0] + xx[1]) / 2.0 for xx in x]
 
 
-def elec_avg(x):
-	"""
-	Params:
-		x: Data comprised of two columns from two electrodes.
-	Returns: The data averaged into a single column.
-	"""
-	return [(xx[0] + xx[1]) / 2.0 for xx in x]
+class ElectrodeDiffTransform(FeatureExtractor):
+	""" Take the difference of the two electrode values. """
+
+	def extractor(self, x):
+		return [xx[0] - xx[1] for xx in x]
 
 
-def elec_diff(x):
-	"""
-	Params:
-		x: Data comprised of two columns from two electrodes.
-	Returns: A vector giving the difference of the two columns.
-	"""
-	return [xx[0] - xx[1] for xx in x]
+class FeatureEnsembleTransform(FeatureExtractor):
+	""" Take an ensemble of different features from the data. """
+
+	def extractor(self, x):
+		diff = mean(map(abs, differential(x)))
+		noise = mean(map(abs, differential(differential(x))))
+		std = stdev(x)
+		stdiff = stdev(differential(x))
+		return [diff, noise, std, stdiff]
 
 
 def differential(x):
@@ -144,18 +139,22 @@ def differential(x):
 	"""
 	return [x2 - x1 for (x1, x2) in zip(x[:-1], x[1:])]
 
+
 def mean(x):
 	""" Returns: The average of x. """
 	return sum(x) / len(x)
+
 
 def var(x):
 	""" Returns: The variance of x. """
 	m = mean(x)
 	return sum([(xx-m)**2 for xx in x]) / len(x)
 
+
 def stdev(x):
 	""" Returns: The standard deviation of x. """
 	return var(x)**0.5
+
 
 def preprocess(plants):
 	# extract windows from plant data
@@ -167,11 +166,13 @@ def preprocess(plants):
 
 	return datapoints
 
+
 def extract(datapoints):
 	datapoints = list(datapoints)
 	labels = [d[0] for d in datapoints]
 	data = [d[1] for d in datapoints]
 	return data, np.asarray(labels)
+
 
 def plot_features():
 	# load plant data from files
@@ -195,6 +196,7 @@ def plot_features():
 		X = scaler.transform(X)
 		plt.scatter(X[:,0], X[:,1], c=next(colors))
 	plt.show()
+
 
 if __name__ == "__main__":
 	# load plant data from files
