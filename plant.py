@@ -5,6 +5,7 @@ import re
 import os
 import csv
 import pickle
+from scipy.signal import decimate
 
 stim_types = {
     'water': ['acqua piante'],
@@ -181,3 +182,20 @@ def format_raw(name, raw_data, raw_stimuli, sample_freq):
         plants.append(plant)
 
     return plants
+
+def resample(plant_data, sample_freq):
+    """
+    Resample some plant data to a new, lower sampling frequency.
+
+    Args:
+        plant_data: The plant data to resample.
+        sample_freq: The new frequency, must not be higher than the current frequency.
+    Returns: A new plant data at the new frequency.
+    """
+    if sample_freq <= plant_data.sample_freq:
+        return plant_data
+
+    dec_factor = int(sample_freq / plant_data.sample_freq)
+    readings = decimate(plant_data.readings, dec_factor, ftype='fir', axis=0)
+    stimuli = [Stimulus(s.type, s.time / dec_factor) for s in plant_data.stimuli]
+    return PlantData(plant_data.name, readings, stimuli, sample_freq)

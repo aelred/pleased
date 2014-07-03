@@ -2,9 +2,10 @@ import numpy
 import sys
 import csv
 from scipy.optimize import curve_fit
-from scipy.signal import decimate
 from itertools import groupby, chain
 import random
+
+import plant
 
 # number of data points after every stimulus to use
 window_size = 2600
@@ -28,20 +29,18 @@ def generate(plant_data):
         type of stimulus and the second element is the data.
     """
 
-    dec_factor = int(sample_freq / plant_data.sample_freq)
-
     # if sample rate is not close to ideal sample rate, drop this data
+    dec_factor = int(sample_freq / plant_data.sample_freq)
     if dec_factor < 0.9:
         print "Dropping data %s, bad sample rate" % plant_data.name
         return []
 
+    plant_data = plant.resample(plant_data, sample_freq)
+
     new_data = []
 
     def add_window(start, stim_type):
-        window = plant_data.readings[start:start+window_size*dec_factor]
-        if dec_factor > 1.0:
-            # resample the window to the right frequency
-            window = decimate(window, dec_factor, ftype='fir', axis=0)
+        window = plant_data.readings[start:start+window_size]
         datapoint = (stim_type, window)
 
         # skip if window is not large enough (e.g. stimulus near end of data)
