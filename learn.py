@@ -5,6 +5,7 @@ from sklearn.lda import LDA
 from sklearn.qda import QDA
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.grid_search import GridSearchCV
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -101,7 +102,7 @@ class DetrendTransform(FeatureExtractor):
 class PostStimulusTransform(FeatureExtractor):
 	""" Remove any pre-stimulus data from the datapoint. """
 
-	def __init__(self, offset):
+	def __init__(self, offset=0):
 		self.offset = offset
 
 	def extractor(self, x):
@@ -215,25 +216,22 @@ if __name__ == "__main__":
 	# set up pipeline
 	pipeline = Pipeline([('elec_avg', ElectrodeAvgTransform()),
 						 ('detrend', DetrendTransform()),
-						 ('poststim', PostStimulusTransform(0)),
+						 ('poststim', PostStimulusTransform()),
 						 ('scaler', StandardScaler()), 
 						 ('classifier', LDA())])
 
-	# perform 5-fold cross validation on pipeline
-	cross_val_score = cross_val_score(pipeline, X_train, y_train, cv=5)
+	params = [{'poststim__offset': [0, 600, 6000]}]
 
-	print "Cross-validation results:"
-	print cross_val_score
+	# perform grid search on pipeline, selecting best parameters from training data
+	grid = GridSearchCV(pipeline, params, cv=5)
+	grid.fit(X_train, y_train)
+	classifier = grid.best_estimator_
 
-	# fit a classifier to the whole of the training data
-	classifier = pipeline.fit(X_train, y_train)
+	print "Grid search results:"
+	print grid.best_score_
 
-	# test the classifier on training and validation data sets
-	train_score = pipeline.score(X_train, y_train)
-	valid_score = pipeline.score(X_valid, y_valid)
-
-	print "Training data results:"
-	print train_score
+	# test the classifier on the validation data set
+	validation_score = classifier.fit(X_train, y_train).score(X_valid, y_valid)
 
 	print "Validation data results:"
-	print valid_score
+	print validation_score
