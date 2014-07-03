@@ -6,7 +6,7 @@ from itertools import groupby, chain
 import random
 
 # number of data points after every stimulus to use
-window_size = 36000
+window_size = 26000
 
 # offset of window from start of stimulus (positive = after)
 window_offset = -6000
