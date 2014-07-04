@@ -171,7 +171,7 @@ def preprocess(plants):
     datapoints = datapoint.filter_types(datapoints, labels)
     # balance the dataset
     datapoints = datapoint.balance(datapoints, False)
-
+    
     return datapoints
 
 
@@ -179,6 +179,12 @@ def extract(datapoints):
     datapoints = list(datapoints)
     labels = [d[0] for d in datapoints]
     data = [d[1] for d in datapoints]
+
+    # take the average and detrend the data ahead of time
+    data = ElectrodeAvgTransform().transform(data)
+    data = DetrendTransform().transform(data)
+    data = PostStimulusTransform(60).transform(data)
+
     return data, np.asarray(labels)
 
 
@@ -233,10 +239,8 @@ if __name__ == "__main__":
     # set up pipeline
     ensemble = FeatureEnsembleTransform().extractor
     pipeline = pipeline.Pipeline(
-        [('elec_avg', ElectrodeAvgTransform()),
-         ('detrend', DetrendTransform()),
-         ('poststim', PostStimulusTransform(60)),
-         ('feature', WindowTransform(ensemble, 10, False)),
+        [
+         ('feature', WindowTransform(ensemble, 3, False)),
          ('scaler', preprocessing.StandardScaler()), 
          ('lda', lda.LDA())
         ])
