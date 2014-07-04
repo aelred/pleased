@@ -16,10 +16,6 @@ window_offset = -600
 # min offset of null data from start of readings and first stimuli
 null_offset = 600
 
-# ideal sample frequency for generated datapoints
-sample_freq = 1.0
-
-
 def generate(plant_data):
     """
     Process plant data to produce a list of classified data points.
@@ -30,12 +26,9 @@ def generate(plant_data):
     """
 
     # if sample rate is not close to ideal sample rate, drop this data
-    dec_factor = int(sample_freq / plant_data.sample_freq)
-    if dec_factor < 0.9:
+    if plant.ideal_freq / plant_data.sample_freq < 0.9:
         print "Dropping data %s, bad sample rate" % plant_data.name
         return []
-
-    plant_data = plant.resample(plant_data, sample_freq)
 
     new_data = []
 

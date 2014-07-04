@@ -16,6 +16,9 @@ stim_types = {
     'light-off': ['light-off']
 }
 
+# the ideal sample frequency to sample the plant data at
+ideal_freq = 1.0
+
 # a stimulus on the plant, defined as a type (such as 'ozone') and time
 # the null (no) stimulus is named 'null'
 Stimulus = namedtuple('Stimulus', ['type', 'time'])
@@ -179,11 +182,12 @@ def format_raw(name, raw_data, raw_stimuli, sample_freq):
     for i, (r1, r2) in enumerate(zip(readings.T[0::2], readings.T[1::2])):
         data = numpy.array([r1, r2]).T
         plant = PlantData("%s_%d" % (name, i), data, stimuli, sample_freq)
+        plant = resample(plant, ideal_freq)
         plants.append(plant)
 
     return plants
 
-def resample(plant_data, sample_freq):
+def resample(plant_data, new_sample_freq):
     """
     Resample some plant data to a new, lower sampling frequency.
 
@@ -192,10 +196,10 @@ def resample(plant_data, sample_freq):
         sample_freq: The new frequency, must not be higher than the current frequency.
     Returns: A new plant data at the new frequency.
     """
-    if sample_freq <= plant_data.sample_freq:
+    if new_sample_freq <= plant_data.sample_freq:
         return plant_data
 
-    dec_factor = int(sample_freq / plant_data.sample_freq)
+    dec_factor = int(new_sample_freq / plant_data.sample_freq)
     readings = decimate(plant_data.readings, dec_factor, ftype='fir', axis=0)
     stimuli = [Stimulus(s.type, s.time / dec_factor) for s in plant_data.stimuli]
-    return PlantData(plant_data.name, readings, stimuli, sample_freq)
+    return PlantData(plant_data.name, readings, stimuli, new_sample_freq)
