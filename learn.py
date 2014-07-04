@@ -1,11 +1,4 @@
-from sklearn.cross_validation import train_test_split, cross_val_score
-from sklearn.base import BaseEstimator
-from sklearn.svm import SVC
-from sklearn.lda import LDA
-from sklearn.qda import QDA
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-from sklearn.grid_search import GridSearchCV
+from sklearn import base, svm, lda, qda, pipeline, preprocessing, grid_search
 import pywt
 import random
 import numpy as np
@@ -22,7 +15,7 @@ import datapoint
 labels = ['null', 'ozone', 'H2SO4']
 
 
-class FeatureExtractor(BaseEstimator):
+class FeatureExtractor(base.BaseEstimator):
     """ Extracts features from each datapoint. """
 
     def __init__(self, extractor=None):
@@ -95,7 +88,8 @@ class DiscreteWaveletTransform(FeatureExtractor):
         self.D = D
 
     def extractor(self, x):
-        return np.concatenate(pywt.wavedec(x, self.kind, self.L)[0:self.L-self.D])
+        wavelet = pywt.wavedec(x, self.kind, self.L)
+        return np.concatenate(wavelet[0:self.L-self.D])
 
 
 class DetrendTransform(FeatureExtractor):
@@ -197,7 +191,7 @@ def plot_features():
     # scale data
     X, y = extract(datapoints)
     X = FeatureExtractor(features).transform(X)
-    scaler = StandardScaler()
+    scaler = preprocessing.StandardScaler()
     scaler.fit(X)
 
     groups = lambda: datapoint.group_types(datapoints)
@@ -228,17 +222,17 @@ if __name__ == "__main__":
 
     # set up pipeline
     ensemble = FeatureEnsembleTransform()
-    pipeline = Pipeline([('elec_avg', ElectrodeAvgTransform()),
-                         ('detrend', DetrendTransform()),
-                         ('poststim', PostStimulusTransform(60)),
-                         ('feature', WindowTransform(ensemble.extractor, 10, False)),
-                         ('scaler', StandardScaler()), 
-                         ('lda', LDA())])
+    pipeline = pipeline.Pipeline([('elec_avg', ElectrodeAvgTransform()),
+                                  ('detrend', DetrendTransform()),
+                                  ('poststim', PostStimulusTransform(60)),
+                                  ('feature', WindowTransform(ensemble.extractor, 10, False)),
+                                  ('scaler', preprocessing.StandardScaler()), 
+                                  ('lda', lda.LDA())])
 
     params = [{}]
 
     # perform grid search on pipeline, selecting best parameters from training data
-    grid = GridSearchCV(pipeline, params, cv=5, verbose=2)
+    grid = grid_search.GridSearchCV(pipeline, params, cv=5, verbose=2)
     grid.fit(X_train, y_train)
     classifier = grid.best_estimator_
 
