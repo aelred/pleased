@@ -242,7 +242,7 @@ if __name__ == "__main__":
         [
          ('feature', WindowTransform(ensemble, 3, False)),
          ('scaler', preprocessing.StandardScaler()), 
-         ('lda', lda.LDA())
+         ('svm', svm.SVC())
         ])
 
     params = [{}]
