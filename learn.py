@@ -221,17 +221,19 @@ if __name__ == "__main__":
     X_valid, y_valid = extract(preprocess(valid_plants))
 
     # set up pipeline
-    ensemble = FeatureEnsembleTransform()
-    pipeline = pipeline.Pipeline([('elec_avg', ElectrodeAvgTransform()),
-                                  ('detrend', DetrendTransform()),
-                                  ('poststim', PostStimulusTransform(60)),
-                                  ('feature', WindowTransform(ensemble.extractor, 10, False)),
-                                  ('scaler', preprocessing.StandardScaler()), 
-                                  ('lda', lda.LDA())])
+    ensemble = FeatureEnsembleTransform().extractor
+    pipeline = pipeline.Pipeline(
+        [('elec_avg', ElectrodeAvgTransform()),
+         ('detrend', DetrendTransform()),
+         ('poststim', PostStimulusTransform(60)),
+         ('feature', WindowTransform(ensemble, 10, False)),
+         ('scaler', preprocessing.StandardScaler()), 
+         ('lda', lda.LDA())
+        ])
 
     params = [{}]
 
-    # perform grid search on pipeline, selecting best parameters from training data
+    # perform grid search on pipeline, get best parameters from training data
     grid = grid_search.GridSearchCV(pipeline, params, cv=5, verbose=2)
     grid.fit(X_train, y_train)
     classifier = grid.best_estimator_
