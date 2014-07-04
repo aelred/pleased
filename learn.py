@@ -6,6 +6,7 @@ from sklearn.qda import QDA
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.grid_search import GridSearchCV
+import pywt
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -83,6 +84,18 @@ class WindowTransform(FeatureExtractor):
             windows.append(self.f(window))
 
         return np.concatenate(windows)
+
+
+class DiscreteWaveletTransform(FeatureExtractor):
+    """ Perform a wavelet transform on the data. """
+
+    def __init__(self, kind, L, D):
+        self.kind = kind
+        self.L = L
+        self.D = D
+
+    def extractor(self, x):
+        return np.concatenate(pywt.wavedec(x, self.kind, self.L)[0:self.L-self.D])
 
 
 class DetrendTransform(FeatureExtractor):
