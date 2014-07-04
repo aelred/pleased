@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from scipy.signal import decimate
 from scipy.optimize import curve_fit
-from itertools import chain
+from itertools import chain, groupby
 
 import plant
 import datapoint
@@ -170,7 +170,7 @@ def preprocess(plants):
     # filter to relevant datapoint types
     datapoints = datapoint.filter_types(datapoints, labels)
     # balance the dataset
-    datapoints = datapoint.balance(datapoints)
+    datapoints = datapoint.balance(datapoints, False)
 
     return datapoints
 
@@ -216,9 +216,19 @@ if __name__ == "__main__":
     train_plants = plants[:train_len]
     valid_plants = plants[train_len:]
 
+    print "Experiments in training set:", len(train_plants)
+    print "Experiments in validation set:", len(valid_plants)
+
     # get X data and y labels
     X_train, y_train = extract(preprocess(train_plants))
     X_valid, y_valid = extract(preprocess(valid_plants))
+
+    print "Datapoints in training set:", len(X_train)
+    class_train = [(d[0], len(list(d[1]))) for d in groupby(y_train)]
+    print "Classes in training set:", class_train 
+    print "Datapoints in validation set:", len(X_valid)
+    class_valid = [(d[0], len(list(d[1]))) for d in groupby(y_valid)]
+    print "Classes in validation set:", class_valid
 
     # set up pipeline
     ensemble = FeatureEnsembleTransform().extractor

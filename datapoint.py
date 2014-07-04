@@ -143,19 +143,32 @@ def group_types(datapoints):
 
     return groupby(sorted(datapoints, key=by_type), key=by_type)
 
-def balance(datapoints):
+def balance(datapoints, undersample=True):
     """
     Params:
         datapoints: A list of datapoints to balance.
+        undersample:
+            True to reduce the size of common classes, false to 
+            replicate datapoints in uncommon classes.
     Returns: A subset with the same number of every represented type.
     """
 
     # find smallest datapoint type to decide how to balance
-    group_size = min(len(list(g[1])) for g in group_types(datapoints))
+    all_sizes = [len(list(g[1])) for g in group_types(datapoints)]
+    if undersample:
+        group_size = min(all_sizes)
+    else:
+        group_size = max(all_sizes)
+
+    def sample(data):
+        # if class is too small, duplicate data and sample remainder
+        # if class is too big, duplicate will be empty, take random sample
+        duplicate = data * int(group_size / len(data))
+        sample = random.sample(data, group_size % len(data))
+        return duplicate + sample
 
     # pick a random sample from each group
-    samples = [random.sample(list(g[1]), group_size) 
-               for g in group_types(datapoints)]
+    samples = [sample(list(g[1])) for g in group_types(datapoints)]
 
     # concatenate all samples and return
     return list(chain(*samples))
