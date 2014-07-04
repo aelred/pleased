@@ -73,7 +73,7 @@ class WindowTransform(FeatureExtractor):
         for i in range(0, len(x)-window_size+1, step):
             window = x[i:i+window_size]
             if self.hanning:
-                window *= np.hanning
+                window *= np.hanning(len(window))
             windows.append(self.f(window))
 
         return np.concatenate(windows)
