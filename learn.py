@@ -12,7 +12,7 @@ import plant
 import datapoint
 
 
-labels = ['null', 'ozone', 'H2SO4']
+labels = ['null', 'ozone']
 
 
 class FeatureExtractor(base.BaseEstimator):
@@ -96,8 +96,8 @@ class DetrendTransform(FeatureExtractor):
     """ Remove any linear trends in the data. """
 
     def extractor(self, x):
-        def linear(x, m, c):
-            return map(lambda xx: m*xx + c, x)
+        def linear(xs, m, c):
+            return map(lambda xx: m*xx + c, xs)
 
         # find best fitting curve to pre-stimulus window
         times = range(0, len(x))
@@ -113,7 +113,7 @@ class PostStimulusTransform(FeatureExtractor):
         self.offset = offset
 
     def extractor(self, x):
-        return x[datapoint.window_offset-self.offset:]
+        return x[self.offset-datapoint.window_offset:]
 
 
 class ElectrodeAvgTransform(FeatureExtractor):
@@ -130,6 +130,28 @@ class ElectrodeDiffTransform(FeatureExtractor):
         return [xx[0] - xx[1] for xx in x]
 
 
+class MovingAvgTransform(FeatureExtractor):
+    """ Take a moving average of time series data. """
+
+    def __init__(self, n):
+        self.n = n
+
+    def extractor(self, x):
+        mov_avg = []
+
+        for i, xx in enumerate(x):
+            start = i-self.n/2
+            if start < 0:
+                start = 0
+            end = i+self.n/2
+            if end > len(x):
+                end = len(x)
+            window = x[start:end]
+            mov_avg.append(mean(window))
+
+        return mov_avg
+
+
 class FeatureEnsembleTransform(FeatureExtractor):
     """ Take an ensemble of different features from the data. """
 
@@ -138,7 +160,8 @@ class FeatureEnsembleTransform(FeatureExtractor):
         noise = mean(map(abs, differential(differential(x))))
         std = stdev(x)
         stdiff = stdev(differential(x))
-        return [diff, noise, std, stdiff]
+        hjorth = var(differential(x)) / var(x)
+        return [diff, noise, std, stdiff, hjorth]
 
 
 def differential(x):
