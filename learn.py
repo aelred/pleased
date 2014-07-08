@@ -213,7 +213,7 @@ def extract(datapoints):
     return data, np.asarray(labels)
 
 
-def plot_features():
+def plot_features(f1, f2):
     # load plant data from files
     plants = plant.load_all()
     # preprocess data
@@ -221,7 +221,7 @@ def plot_features():
 
     # scale data
     X, y = extract(datapoints)
-    X = FeatureExtractor(features).transform(X)
+    X = FeatureEnsembleTransform().transform(X)
     scaler = preprocessing.StandardScaler()
     scaler.fit(X)
 
@@ -231,9 +231,27 @@ def plot_features():
     colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups())))))
     for dtype, points in groups():
         X, y = extract(points)
-        X = FeatureExtractor(features).transform(X)
+        X = FeatureEnsembleTransform().transform(X)
         X = scaler.transform(X)
-        plt.scatter(X[:,0], X[:,1], c=next(colors))
+        plt.scatter(X[:,f1], X[:,f2], c=next(colors), label=dtype)
+    plt.legend()
+    plt.show()
+
+
+def plot_histogram(feature):
+    # load plant data from files
+    plants = plant.load_all()
+    # preprocess data
+    datapoints = preprocess(plants)
+
+    groups = lambda: datapoint.group_types(datapoints)
+
+    # visualize a histogram of the feature
+    for dtype, points in groups():
+        X, y = extract(points)
+        X = FeatureEnsembleTransform().transform(X)
+        plt.hist(X[:,feature], bins=40, alpha=0.5, label=dtype)
+    plt.legend()
     plt.show()
 
 
