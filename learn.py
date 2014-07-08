@@ -158,10 +158,12 @@ class FeatureEnsembleTransform(FeatureExtractor):
     def extractor(self, x):
         diff = mean(map(abs, differential(x)))
         noise = mean(map(abs, differential(differential(x))))
-        std = stdev(x)
-        stdiff = stdev(differential(x))
-        hjorth = var(differential(x)) / var(x)
-        return [diff, noise, std, stdiff, hjorth]
+        vari = var(x)
+        vardiff = var(differential(x))
+        varnoise = var(differential(differential(x)))
+        hjorth_mob = vardiff**0.5 / vari**0.5
+        hjorth_com = (varnoise**0.5 / vardiff**0.5) / hjorth_mob
+        return [diff, noise, vari, vardiff, hjorth_mob, hjorth_com]
 
 
 def differential(x):
