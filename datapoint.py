@@ -19,10 +19,6 @@ null_offset = 600
 def generate(plant_data):
     """
     Process plant data to produce a list of classified data points.
-
-    Returns:
-        A list of tuples, where the first element of the tuple is the
-        type of stimulus and the second element is the data.
     """
 
     # if sample rate is not close to ideal sample rate, drop this data
@@ -30,15 +26,16 @@ def generate(plant_data):
         print "Dropping data %s, bad sample rate" % plant_data.name
         return []
 
-    new_data = []
+    X = []
+    y = []
 
     def add_window(start, stim_type):
         window = plant_data.readings[start:start+window_size]
-        datapoint = (stim_type, window)
 
         # skip if window is not large enough (e.g. stimulus near end of data)
         if len(window) == window_size:
-            new_data.append(datapoint)
+            X.append(window)
+            y.append(stim_type)
 
     for stim in plant_data.stimuli:
         # create a window on each stimulus
@@ -52,7 +49,7 @@ def generate(plant_data):
         add_window(null_start, 'null')
         null_start += window_size
 
-    return new_data
+    return X, y
 
 
 def generate_all(plants):
@@ -61,34 +58,31 @@ def generate_all(plants):
 
     Params:
         plants: A list of PlantData
-    Returns:
-        A list of tuples, where the first element of the tuple is the type of
-        stimulus and the second element is the data.
     """
-    new_data = []
+    X = []
+    y = []
 
     for plant_data in plants:
-        new_data += generate(plant_data)
+        Xp, yp = generate(plant_data)
+        X += Xp
+        y += yp
 
-    return new_data
+    return X, y
 
 
-def save(path, datapoints):
+def save(path, X, y):
     """
     Save data points to a CSV file.
 
     Params:
         path: File to save data points to.
-        datapoints:
-            A list of tuples, where the first element of the tuple is the type
-            of stimulus and the second element is the data.
     """
 
     with file(path, 'w') as f:
         writer = csv.writer(f)
-        for stim_type, data in datapoints:
+        for xx, yy in X, y:
             # write a row for every data point
-            writer.writerow([stim_type] + data.T.flatten().tolist())
+            writer.writerow([yy] + xx.T.flatten().tolist())
 
 
 def load(path):
@@ -97,71 +91,67 @@ def load(path):
 
     Params:
         path: File to load data points from.
-    Returns:
-        A list of tuples, where the first element of the tuple is the type of
-        stimulus and the second element is the data.
     """
 
-    datapoints = []
+    X = []
+    y = []
 
     with file(path, 'r') as f:
         reader = csv.reader(f)
         for row in reader:
-            stim_type = row[0]
-            data = map(float, row[1:])
-            data = numpy.array(data)
-            data = numpy.reshape(data, (2, -1)).T  # reshape into two columns
-            datapoints.append((stim_type, data))
+            xx = map(float, row[1:])
+            xx = numpy.array(xx)
+            xx = numpy.reshape(xx, (2, -1)).T  # reshape into two columns
+            X.append(xx)
+            y.append(row[0])
 
-    return datapoints
+    return X, y
 
-def filter_types(datapoints, types):
+def filter_types(X, y, types):
     """
     Params:
-        datapoints: A list of datapoints to filter.
         classes: The allowed stimulus types.
     Returns: All datapoints of the given types.
     """
-    return filter((lambda d: d[0] in types), datapoints)
+    return zip(*filter((lambda d: d[1] in types), zip(X, y)))
 
-def group_types(datapoints):
-    """
-    Params:
-        datapoints: A list of datapoints to group.
-    Returns: The datapoints grouped together by type.
-    """
+def group_types(X, y):
+    """ Returns: The datapoints grouped together by type. """
 
     def by_type(d):
-        return d[0]
+        return d[1]
 
-    return groupby(sorted(datapoints, key=by_type), key=by_type)
+    groups = groupby(sorted(zip(X, y), key=by_type), key=by_type)
+    groups = [(yy, zip(*g)) for yy, g in groups]
+    return [(yy, (numpy.array(Xs), numpy.array(ys))) 
+            for yy, (Xs, ys) in groups]
 
-def balance(datapoints, undersample=True):
+def sample(X, y, group_size):
+    # if class is too small, duplicate data and sample remainder
+    # if class is too big, duplicate will be empty, take random sample
+    duplicate = zip(X, y) * int(group_size / len(X))
+    sample = random.sample(zip(X, y), group_size % len(X))
+    return zip(*(duplicate + sample))
+
+def balance(X, y, undersample=True):
     """
     Params:
-        datapoints: A list of datapoints to balance.
         undersample:
             True to reduce the size of common classes, false to 
             replicate datapoints in uncommon classes.
     Returns: A subset with the same number of every represented type.
     """
-
+    
     # find smallest datapoint type to decide how to balance
-    all_sizes = [len(list(g[1])) for g in group_types(datapoints)]
+    all_sizes = [len(list(ys)) for yy, (Xs, ys) in group_types(X, y)]
     if undersample:
         group_size = min(all_sizes)
     else:
         group_size = max(all_sizes)
 
-    def sample(data):
-        # if class is too small, duplicate data and sample remainder
-        # if class is too big, duplicate will be empty, take random sample
-        duplicate = data * int(group_size / len(data))
-        sample = random.sample(data, group_size % len(data))
-        return duplicate + sample
-
     # pick a random sample from each group
-    samples = [sample(list(g[1])) for g in group_types(datapoints)]
+    samples = [sample(Xs, ys, group_size) for yy, (Xs, ys) in group_types(X, y)]
+    X, y = zip(*samples)
 
     # concatenate all samples and return
-    return list(chain(*samples))
+    return (numpy.array(list(chain(*X))), numpy.array(list(chain(*y))))
