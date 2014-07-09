@@ -54,6 +54,8 @@ class DecimateTransform(FeatureExtractor):
         self.factor = factor
 
     def extractor(self, x):
+        if self.factor == 1.0:
+            return x
         return decimate(x, self.factor, ftype='fir')
 
 
