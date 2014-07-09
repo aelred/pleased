@@ -253,6 +253,33 @@ def plot_histogram(feature):
     plt.show()
 
 
+_ensemble = FeatureEnsembleTransform().extractor
+pre_pipe = [
+    ('feature', WindowTransform(_ensemble, 3, False)),
+    ('scaler', preprocessing.StandardScaler())
+]
+
+
+def plot_pipeline():
+    # load plant data from files
+    plants = plant.load_all()
+    # preprocess data
+    X, y = preprocess(plants)
+
+    # transform data on pipeline
+    lda_pipe = pipeline.Pipeline(pre_pipe + [('lda', lda.LDA(2))])
+    lda_pipe.fit(X, y)
+    X = lda_pipe.transform(X)
+
+    groups = lambda: datapoint.group_types(X, y)
+
+    # visualize the pipeline 
+    colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups())))))
+    for dtype, (Xg, yg) in groups():
+        plt.scatter(Xg[:,0], Xg[:,1], c=next(colors), label=dtype)
+    plt.legend()
+    plt.show()
+
 if __name__ == "__main__":
     # load plant data from files
     plants = plant.load_all()
@@ -278,14 +305,7 @@ if __name__ == "__main__":
     print "Classes in validation set:", class_valid
 
     # set up pipeline
-    ensemble = FeatureEnsembleTransform().extractor
-    pipeline = pipeline.Pipeline(
-        [
-         ('feature', WindowTransform(ensemble, 3, False)),
-         ('scaler', preprocessing.StandardScaler()), 
-         ('svm', svm.SVC())
-        ])
-
+    pipeline = pipeline.Pipeline(pre_pipe + [('svm', svm.SVC())])
     params = [{}]
 
     # perform grid search on pipeline, get best parameters from training data
