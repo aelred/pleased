@@ -13,9 +13,10 @@ def plant_data(pd):
 def datapoints(X, y):
     [datapoint(xx, yy) for xx, yy in zip(X, y)]
 
-def datapoint(xx, yy):
+def datapoint(xx, yy, stim_line=True):
     plt.plot(xx)
-    plt.axvline(-datap.window_offset)
+    if stim_line:
+        plt.axvline(-datap.window_offset)
 
 def show():
 	plt.show()
