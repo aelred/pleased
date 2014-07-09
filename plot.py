@@ -8,11 +8,11 @@ def plant_data(pd):
 	for s in pd.stimuli:
 		plt.axvline(s.time)
 
-def datapoints(ds):
-	map(datapoint, ds)
+def datapoints(X, y):
+    [datapoint(xx, yy) for xx, yy in zip(X, y)]
 
-def datapoint(d):
-	plt.plot(d[1])
+def datapoint(xx, yy):
+	plt.plot(xx)
 
 def show():
 	plt.show()
@@ -23,11 +23,11 @@ def plant_data_save(plant_list, path="plant_plots"):
 		plt.savefig(os.path.join(path, "%s.jpg" % p.name))
 		plt.clf()
 
-def datapoints_save(datapoints, path="plots"):
+def datapoints_save(X, y, path="plots"):
 	type_count = Counter()
 
-	for d in datapoints:
-		type_count[d[0]] += 1
-		datapoint(d)
-		plt.savefig(os.path.join(path, "%s_%d.png" % (d[0], type_count[d[0]])))
+	for xx, yy in zip(X, y):
+		type_count[yy] += 1
+		datapoint(xx, yy)
+		plt.savefig(os.path.join(path, "%s_%d.png" % (yy, type_count[yy])))
 		plt.clf()

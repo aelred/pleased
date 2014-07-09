@@ -80,7 +80,7 @@ def save(path, X, y):
 
     with file(path, 'w') as f:
         writer = csv.writer(f)
-        for xx, yy in X, y:
+        for xx, yy in zip(X, y):
             # write a row for every data point
             writer.writerow([yy] + xx.T.flatten().tolist())
 
