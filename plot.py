@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 from collections import Counter
 import os
 
+import datapoint as datap
+
 
 def plant_data(pd):
 	plt.plot(pd.readings)
@@ -12,7 +14,8 @@ def datapoints(X, y):
     [datapoint(xx, yy) for xx, yy in zip(X, y)]
 
 def datapoint(xx, yy):
-	plt.plot(xx)
+    plt.plot(xx)
+    plt.axvline(-datap.window_offset)
 
 def show():
 	plt.show()
