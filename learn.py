@@ -105,16 +105,16 @@ class DiscreteWaveletTransform(FeatureExtractor):
 class DetrendTransform(FeatureExtractor):
     """ Remove any linear trends in the data. """
 
-    def extractor(self, x):
-        def linear(xs, m, c):
-            return map(lambda xx: m*xx + c, xs)
+    def linear(self, xs, m, c):
+        return map(lambda xx: m*xx + c, xs)
 
-        # find best fitting curve to pre-stimulus window
+    def extractor(self, x):
+        # find best fitting line to pre-stimulus window
         times = range(0, len(x))
-        params, cov = curve_fit(linear, times[0:-datapoint.window_offset], 
-                                x[0:-datapoint.window_offset], (0, 0))
-        # subtract extrapolated curve from data to produce new dataset
-        return x - linear(times, *params)
+        m, c, r, p, err = linregress(times[0:-datapoint.window_offset], 
+                                     x[0:-datapoint.window_offset])
+        # subtract extrapolated line from data to produce new dataset
+        return x - self.linear(times, m, c)
 
 class PostStimulusTransform(FeatureExtractor):
     """ Remove any pre-stimulus data from the datapoint. """
