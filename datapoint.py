@@ -24,7 +24,7 @@ def generate(plant_data):
     # if sample rate is not close to ideal sample rate, drop this data
     if plant.ideal_freq / plant_data.sample_freq < 0.9:
         print "Dropping data %s, bad sample rate" % plant_data.name
-        return []
+        return None
 
     X = []
     y = []
@@ -63,7 +63,10 @@ def generate_all(plants):
     y = []
 
     for plant_data in plants:
-        Xp, yp = generate(plant_data)
+        result = generate(plant_data)
+        if result is None:
+            continue
+        Xp, yp = result
         X += Xp
         y += yp
 
