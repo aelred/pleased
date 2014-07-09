@@ -210,7 +210,7 @@ def preprocess(plants):
     # take the average and detrend the data ahead of time
     X = ElectrodeAvgTransform().transform(X)
     X = DetrendTransform().transform(X)
-    X = PostStimulusTransform(600).transform(X)
+    X = PostStimulusTransform(60).transform(X)
 
     return X, y
 
