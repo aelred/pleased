@@ -81,6 +81,22 @@ class WindowTransform(FeatureExtractor):
         return np.concatenate(windows)
 
 
+class DecimateWindowTransform(FeatureExtractor):
+    """ Decimate the data at different scales and apply a function to each. """
+
+    def __init__(self, f):
+        self.f = f
+
+    def extractor(self, x):
+        results = []
+        
+        for scale in [2**e for e in range(0, 9)]:
+            decimated = DecimateTransform(scale).extractor(x)
+            results.append(self.f(decimated))
+
+        return np.concatenate(results)
+
+
 class MapElectrodeTransform(FeatureExtractor):
     """ Apply a function to each electrode. """
 
@@ -256,8 +272,9 @@ def plot_histogram(feature):
 
 
 _ensemble = FeatureEnsembleTransform().extractor
+_window = WindowTransform(_ensemble, 3, False).extractor
 pre_pipe = [
-    ('feature', WindowTransform(_ensemble, 3, False)),
+    ('feature', DecimateWindowTransform(_window)),
     ('scaler', preprocessing.StandardScaler())
 ]
 
