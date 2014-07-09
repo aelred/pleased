@@ -79,6 +79,16 @@ class WindowTransform(FeatureExtractor):
         return np.concatenate(windows)
 
 
+class MapElectrodeTransform(FeatureExtractor):
+    """ Apply a function to each electrode. """
+
+    def __init__(self, f):
+        self.f = f
+
+    def extractor(self, x):
+        return np.array(zip(*[self.f(np.array(xx)) for xx in zip(*x)]))
+
+
 class DiscreteWaveletTransform(FeatureExtractor):
     """ Perform a wavelet transform on the data. """
 
