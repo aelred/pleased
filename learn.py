@@ -286,16 +286,24 @@ def plot_pipeline():
     X, y = preprocess(plants)
 
     # transform data on pipeline
-    lda_pipe = pipeline.Pipeline(pre_pipe + [('lda', lda.LDA(2))])
+    lda_ = lda.LDA(2)
+    lda_pipe = pipeline.Pipeline(pre_pipe + [('lda', lda_)])
     lda_pipe.fit(X, y)
+    yp = lda_pipe.predict(X)
     X = lda_pipe.transform(X)
 
     groups = lambda: datapoint.group_types(X, y)
 
     # visualize the pipeline 
-    colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups())))))
+    cgen = lambda: iter(cm.rainbow(np.linspace(0, 1, len(list(groups())))))
+    colors = cgen()
     for dtype, (Xg, yg) in groups():
-        plt.scatter(Xg[:,0], Xg[:,1], c=next(colors), label=dtype)
+        tp = (y == yp)[yp==dtype]
+        Xtp, Xfp = X[tp], X[~tp]
+        c = next(colors)
+        plt.scatter(Xtp[:,0], Xtp[:,1], 'o', c=c, label=dtype)
+        plt.scatter(Xfp[:,0], Xfp[:,1], '.', c=c, label=dtype + " false positive")
+
     plt.legend()
     plt.show()
 
