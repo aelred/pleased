@@ -17,7 +17,7 @@ stim_types = {
 }
 
 # the ideal sample frequency to sample the plant data at
-ideal_freq = 1.0
+ideal_freq = 0.1
 
 # a stimulus on the plant, defined as a type (such as 'ozone') and time
 # the null (no) stimulus is named 'null'

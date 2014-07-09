@@ -8,13 +8,13 @@ import random
 import plant
 
 # number of data points after every stimulus to use
-window_size = 2600
+window_size = 26000
 
 # offset of window from start of stimulus (positive = after)
-window_offset = -600
+window_offset = -6000
 
 # min offset of null data from start of readings and first stimuli
-null_offset = 600
+null_offset = 6000
 
 def generate(plant_data):
     """
