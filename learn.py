@@ -5,14 +5,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from scipy.signal import decimate
-from scipy.optimize import curve_fit
+from scipy.stats import linregress
 from itertools import chain, groupby
 
 import plant
 import datapoint
 
 
-labels = ['null', 'ozone']
+labels = ['null', 'ozone', 'H2SO4']
 
 
 class FeatureExtractor(base.BaseEstimator):
