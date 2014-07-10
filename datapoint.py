@@ -125,9 +125,7 @@ def group_types(X, y):
         return d[1]
 
     groups = groupby(sorted(zip(X, y), key=by_type), key=by_type)
-    groups = [(yy, zip(*g)) for yy, g in groups]
-    return [(yy, (numpy.array(Xs), numpy.array(ys))) 
-            for yy, (Xs, ys) in groups]
+    return [(yy, zip(*g)) for yy, g in groups]
 
 def sample(X, y, group_size):
     # if class is too small, duplicate data and sample remainder

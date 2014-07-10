@@ -292,17 +292,19 @@ def plot_pipeline():
     yp = lda_pipe.predict(X)
     X = lda_pipe.transform(X)
 
-    groups = lambda: datapoint.group_types(X, y)
+    groups = datapoint.group_types(zip(X, yp), y)
 
     # visualize the pipeline 
-    cgen = lambda: iter(cm.rainbow(np.linspace(0, 1, len(list(groups())))))
-    colors = cgen()
-    for dtype, (Xg, yg) in groups():
-        tp = (y == yp)[yp==dtype]
-        Xtp, Xfp = X[tp], X[~tp]
+    colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups)))))
+    for dtype, (Xg, yg) in groups:
+        # extract predicted class
+        Xg, yp = map(np.array, zip(*Xg))
+        tp = (yg == yp)
+        Xtp, Xfp = Xg[tp], Xg[~tp]  # find true and false positives
         c = next(colors)
-        plt.scatter(Xtp[:,0], Xtp[:,1], 'o', c=c, label=dtype)
-        plt.scatter(Xfp[:,0], Xfp[:,1], '.', c=c, label=dtype + " false positive")
+        plt.scatter(Xtp[:,0], Xtp[:,1], marker='o', c=c, label=dtype)
+        plt.scatter(Xfp[:,0], Xfp[:,1], marker='x', c=c, 
+                    label=dtype + " false positive")
 
     plt.legend()
     plt.show()
