@@ -18,11 +18,13 @@ def get_data(plants):
     # extract windows from plant data
     X, y, sources = datapoint.generate_all(plants)
     # filter to relevant datapoint types
-    X, y = datapoint.filter_types(X, y, labels)
+    X, y = datapoint.filter_types(zip(X, sources), y, labels)
     # balance the dataset
     X, y = datapoint.balance(X, y, False)
 
-    return X, y
+    X, sources = zip(*X)
+
+    return np.array(X), np.array(y), np.array(sources)
 
 
 def plot_features(f1, f2):
