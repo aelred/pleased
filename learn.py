@@ -73,15 +73,15 @@ class Strategy:
         self.classifier = classifier
         self.params = params
 
-    def preprocess(self, X, y):
-        return pipeline.Pipeline(self.preproc_pipe).fit_transform(X, y), y
+    def preprocess(self, X, y, sources):
+        return pipeline.Pipeline(self.preproc_pipe).fit_transform(X, y), y, sources
 
     def plot(self):
         # load plant data from files
         plants = plant.load_all()
-        X, y = get_data(plants)
+        X, y, sources = get_data(plants)
         # preprocess data
-        X, y = self.preprocess(X, y)
+        X, y, sources = self.preprocess(X, y, sources)
 
         # transform data on pipeline
         lda_ = lda.LDA(2)
@@ -153,6 +153,28 @@ class Strategy:
         print "Validation data results:"
         print validation_score
 
+
+class NullStrategy(Strategy):
+
+    def preprocess(self, X, y, sources):
+        """ 
+        Method that changes null class labels to instead be the source of the null.
+        This allows testing if null data can be distinguished per-experiment.
+        """
+        def set_class(yy, source):
+            if yy == 'null':
+                return 'null ' + source.split("#")[0]
+            else:
+                return yy
+        y = [set_class(yy, source) for yy, source in zip(y, sources)]
+        return Strategy.preprocess(self, X, y, sources)
+
+# bare minimum preprocessing to give valid data
+preproc_min = [
+    ('avg', ElectrodeAvgTransform()),
+    ('poststim', PostStimulusTransform())
+]
+
 # averages electrodes and detrends data
 preproc_standard = [
     ('avg', ElectrodeAvgTransform()),
@@ -173,7 +195,11 @@ postproc_standard = [
     ('scaler', preprocessing.StandardScaler())
 ]
 
-strat = Strategy(
+# strategy that performs the bare minimum transforms on the raw data
+min_strat = Strategy(preproc_min, [], postproc_standard, svm.SVC(), [{}])
+
+# strategy that extracts features from decimated windows
+feat_strat = NullStrategy(
     preproc_standard, 
     extract_decimate_ensemble, 
     postproc_standard, 
