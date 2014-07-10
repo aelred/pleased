@@ -219,7 +219,7 @@ def stdev(x):
 
 def preprocess(plants):
     # extract windows from plant data
-    X, y = datapoint.generate_all(plants)
+    X, y, sources = datapoint.generate_all(plants)
     # filter to relevant datapoint types
     X, y = datapoint.filter_types(X, y, labels)
     # balance the dataset

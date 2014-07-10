@@ -49,7 +49,7 @@ def generate(plant_data):
         add_window(null_start, 'null')
         null_start += window_size
 
-    return X, y
+    return X, y, [plant_data.name] * len(X)
 
 
 def generate_all(plants):
@@ -61,19 +61,21 @@ def generate_all(plants):
     """
     X = []
     y = []
+    sources = []
 
     for plant_data in plants:
         result = generate(plant_data)
         if result is None:
             continue
-        Xp, yp = result
+        Xp, yp, sourcep = result
         X += Xp
         y += yp
+        sources += sourcep
 
-    return X, y
+    return X, y, sources
 
 
-def save(path, X, y):
+def save(path, X, y, sources):
     """
     Save data points to a CSV file.
 
@@ -83,9 +85,9 @@ def save(path, X, y):
 
     with file(path, 'w') as f:
         writer = csv.writer(f)
-        for xx, yy in zip(X, y):
+        for xx, yy, source in zip(X, y, sources):
             # write a row for every data point
-            writer.writerow([yy] + xx.T.flatten().tolist())
+            writer.writerow([yy, source] + xx.T.flatten().tolist())
 
 
 def load(path):

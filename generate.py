@@ -11,11 +11,11 @@ if __name__ == "__main__":
 
     # process all data
     print "Processing data"
-    X, y = datapoint.generate_all(plants)
+    X, y, sources = datapoint.generate_all(plants)
 
     # write data to file
     print "Writing to data.csv"
-    datapoint.save("data.csv", X, y)
+    datapoint.save("data.csv", X, y, sources)
 
     # create plots of each datapoint and plant
     print "Creating plots"
