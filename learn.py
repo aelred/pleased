@@ -14,18 +14,13 @@ import datapoint
 labels = ['null', 'ozone', 'H2SO4']
 
 
-def preprocess(plants):
+def get_data(plants):
     # extract windows from plant data
     X, y, sources = datapoint.generate_all(plants)
     # filter to relevant datapoint types
     X, y = datapoint.filter_types(X, y, labels)
     # balance the dataset
     X, y = datapoint.balance(X, y, False)
-    
-    # take the average and detrend the data ahead of time
-    X = ElectrodeAvgTransform().transform(X)
-    X = DetrendTransform().transform(X)
-    X = PostStimulusTransform(60).transform(X)
 
     return X, y
 
@@ -33,8 +28,7 @@ def preprocess(plants):
 def plot_features(f1, f2):
     # load plant data from files
     plants = plant.load_all()
-    # preprocess data
-    X, y = preprocess(plants)
+    X, y = get_data(plants)
 
     # scale data
     X = FeatureEnsembleTransform().transform(X)
@@ -55,8 +49,7 @@ def plot_features(f1, f2):
 def plot_histogram(feature):
     # load plant data from files
     plants = plant.load_all()
-    # preprocess data
-    X, y = preprocess(plants)
+    X, y = get_data(plants)
 
     groups = lambda: datapoint.group_types(X, y)
 
@@ -68,82 +61,110 @@ def plot_histogram(feature):
     plt.show()
 
 
+class Strategy:
+
+    def __init__(self, preproc_pipe, extract_pipe, 
+                 postproc_pipe, classifier, params):
+        self.preproc_pipe = preproc_pipe
+        self.extract_pipe = extract_pipe
+        self.postproc_pipe = postproc_pipe
+        self.classifier = classifier
+        self.params = params
+
+    def preprocess(self, X, y):
+        return pipeline.Pipeline(self.preproc_pipe).fit_transform(X, y), y
+
+    def plot(self):
+        # load plant data from files
+        plants = plant.load_all()
+        X, y = get_data(plants)
+        # preprocess data
+        X, y = self.preprocess(X, y)
+
+        # transform data on pipeline
+        lda_ = lda.LDA(2)
+        lda_pipe = pipeline.Pipeline(
+            self.extract_pipe + self.postproc_pipe + [('lda', lda_)])
+        lda_pipe.fit(X, y)
+        yp = lda_pipe.predict(X)
+        X = lda_pipe.transform(X)
+
+        groups = datapoint.group_types(zip(X, yp), y)
+
+        # visualize the pipeline 
+        colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups)))))
+        for dtype, (Xg, yg) in groups:
+            # extract predicted class
+            Xg, yp = map(np.array, zip(*Xg))
+            tp = (yg == yp)
+            Xtp, Xfp = Xg[tp], Xg[~tp]  # find true and false positives
+            c = next(colors)
+            plt.scatter(Xtp[:,0], Xtp[:,1], marker='o', c=c, label=dtype)
+            plt.scatter(Xfp[:,0], Xfp[:,1], marker='x', c=c, 
+                        label=dtype + " false positive")
+
+        plt.legend()
+        plt.show()
+
+    def score(self):
+        # load plant data from files
+        plants = plant.load_all()
+
+        # split plant data into training and validation sets
+        random.shuffle(plants)
+        train_len = int(0.75 * len(plants))
+        train_plants = plants[:train_len]
+        valid_plants = plants[train_len:]
+
+        print "Experiments in training set:", len(train_plants)
+        print "Experiments in validation set:", len(valid_plants)
+
+        # get X data and y labels
+        X_train, y_train = get_data(train_plants)
+        X_valid, y_valid = get_data(valid_plants)
+        X_train, y_train = self.preprocess(X_train, y_train)
+        X_valid, y_valid = self.preprocess(X_valid, y_valid)
+
+        print "Datapoints in training set:", len(X_train)
+        class_train = [(d[0], len(list(d[1]))) for d in groupby(y_train)]
+        print "Classes in training set:", class_train 
+        print "Datapoints in validation set:", len(X_valid)
+        class_valid = [(d[0], len(list(d[1]))) for d in groupby(y_valid)]
+        print "Classes in validation set:", class_valid
+
+        # set up pipeline
+        pipe = pipeline.Pipeline(
+            self.extract_pipe + self.postproc_pipe + 
+            [('classifier', self.classifier)])
+
+        # perform grid search on pipeline, get best parameters from training data
+        grid = grid_search.GridSearchCV(pipe, self.params, cv=5, verbose=2)
+        grid.fit(X_train, y_train)
+        classifier = grid.best_estimator_
+
+        print "Grid search results:"
+        print grid.best_score_
+
+        # test the classifier on the validation data set
+        validation_score = classifier.fit(X_train, y_train).score(X_valid, y_valid)
+
+        print "Validation data results:"
+        print validation_score
+
 _ensemble = FeatureEnsembleTransform().extractor
 _window = WindowTransform(_ensemble, 3, False).extractor
-pre_pipe = [
+preproc_pipe = [
+    ('avg', ElectrodeAvgTransform()),
+    ('detrend', DetrendTransform()),
+    ('poststim', PostStimulusTransform()),
+]
+extract_pipe = [
     ('feature', DecimateWindowTransform(_window)),
+]
+postproc_pipe = [
     ('scaler', preprocessing.StandardScaler())
 ]
-
-
-def plot_pipeline():
-    # load plant data from files
-    plants = plant.load_all()
-    # preprocess data
-    X, y = preprocess(plants)
-
-    # transform data on pipeline
-    lda_ = lda.LDA(2)
-    lda_pipe = pipeline.Pipeline(pre_pipe + [('lda', lda_)])
-    lda_pipe.fit(X, y)
-    yp = lda_pipe.predict(X)
-    X = lda_pipe.transform(X)
-
-    groups = datapoint.group_types(zip(X, yp), y)
-
-    # visualize the pipeline 
-    colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups)))))
-    for dtype, (Xg, yg) in groups:
-        # extract predicted class
-        Xg, yp = map(np.array, zip(*Xg))
-        tp = (yg == yp)
-        Xtp, Xfp = Xg[tp], Xg[~tp]  # find true and false positives
-        c = next(colors)
-        plt.scatter(Xtp[:,0], Xtp[:,1], marker='o', c=c, label=dtype)
-        plt.scatter(Xfp[:,0], Xfp[:,1], marker='x', c=c, 
-                    label=dtype + " false positive")
-
-    plt.legend()
-    plt.show()
+strat = Strategy(preproc_pipe, extract_pipe, postproc_pipe, svm.SVC(), [{}])
 
 if __name__ == "__main__":
-    # load plant data from files
-    plants = plant.load_all()
-
-    # split plant data into training and validation sets
-    random.shuffle(plants)
-    train_len = int(0.75 * len(plants))
-    train_plants = plants[:train_len]
-    valid_plants = plants[train_len:]
-
-    print "Experiments in training set:", len(train_plants)
-    print "Experiments in validation set:", len(valid_plants)
-
-    # get X data and y labels
-    X_train, y_train = preprocess(train_plants)
-    X_valid, y_valid = preprocess(valid_plants)
-
-    print "Datapoints in training set:", len(X_train)
-    class_train = [(d[0], len(list(d[1]))) for d in groupby(y_train)]
-    print "Classes in training set:", class_train 
-    print "Datapoints in validation set:", len(X_valid)
-    class_valid = [(d[0], len(list(d[1]))) for d in groupby(y_valid)]
-    print "Classes in validation set:", class_valid
-
-    # set up pipeline
-    pipeline = pipeline.Pipeline(pre_pipe + [('svm', svm.SVC())])
-    params = [{}]
-
-    # perform grid search on pipeline, get best parameters from training data
-    grid = grid_search.GridSearchCV(pipeline, params, cv=5, verbose=2)
-    grid.fit(X_train, y_train)
-    classifier = grid.best_estimator_
-
-    print "Grid search results:"
-    print grid.best_score_
-
-    # test the classifier on the validation data set
-    validation_score = classifier.fit(X_train, y_train).score(X_valid, y_valid)
-
-    print "Validation data results:"
-    print validation_score
+    strat.score()
