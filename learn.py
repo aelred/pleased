@@ -151,20 +151,32 @@ class Strategy:
         print "Validation data results:"
         print validation_score
 
-_ensemble = FeatureEnsembleTransform().extractor
-_window = WindowTransform(_ensemble, 3, False).extractor
-preproc_pipe = [
+# averages electrodes and detrends data
+preproc_standard = [
     ('avg', ElectrodeAvgTransform()),
     ('detrend', DetrendTransform()),
     ('poststim', PostStimulusTransform()),
 ]
-extract_pipe = [
+
+_ensemble = FeatureEnsembleTransform().extractor
+_window = WindowTransform(_ensemble, 3, False).extractor
+
+# applies feature ensemble to decimated windows
+extract_decimate_ensemble = [
     ('feature', DecimateWindowTransform(_window)),
 ]
-postproc_pipe = [
+
+# normalizes data
+postproc_standard = [
     ('scaler', preprocessing.StandardScaler())
 ]
-strat = Strategy(preproc_pipe, extract_pipe, postproc_pipe, svm.SVC(), [{}])
+
+strat = Strategy(
+    preproc_standard, 
+    extract_decimate_ensemble, 
+    postproc_standard, 
+    svm.SVC(), 
+    [{}])
 
 if __name__ == "__main__":
     strat.score()
