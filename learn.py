@@ -144,6 +144,17 @@ class PostStimulusTransform(FeatureExtractor):
         return x[self.offset-datapoint.window_offset:]
 
 
+class PreStimulusTransform(FeatureExtractor):
+    """ 
+    Removes any post-stimulus data.
+    If the classifier can handle this, it must be infering information from
+    the experiment context itself rathern than from the stimulus.
+    """
+
+    def extractor(self, x):
+        return x[0:-datapoint.window_offset]
+
+
 class ElectrodeAvgTransform(FeatureExtractor):
     """ Take the average of the two electrode values. """
 
