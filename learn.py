@@ -124,7 +124,7 @@ class Classifier:
         axes.set_ylabel('LDA Basis vector 2')
         if title:
             axes.set_title(title)
-        axes.legend(bbox_to_anchor=(1.12, 1.0))
+        axes.legend(bbox_to_anchor=(1.12, 1.0)).draggable()
         fig.show()
 
     def plot(self, title=None, split=True):
