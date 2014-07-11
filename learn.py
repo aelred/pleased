@@ -43,7 +43,7 @@ class Classifier:
     def preprocess(self, X, y, sources):
         return pipeline.Pipeline(self.preproc_pipe).fit_transform(X, y), y, sources
 
-    def plot(self):
+    def plot(self, title=None):
         # load and preprocess data
         X, y, sources = self.get_data()
 
@@ -69,6 +69,10 @@ class Classifier:
             plt.scatter(Xfp[:,0], Xfp[:,1], marker='x', c=c, 
                         label=dtype + " fp")
 
+        plt.xlabel('LDA Basis vector 1')
+        plt.ylabel('LDA Basis vector 2')
+        if title:
+            plt.title(title)
         plt.legend()
         plt.show()
 
