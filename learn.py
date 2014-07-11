@@ -11,77 +11,41 @@ import plant
 import datapoint
 
 
-labels = ['null', 'ozone', 'H2SO4']
-
-
-def get_data(plants):
-    # extract windows from plant data
-    X, y, sources = datapoint.generate_all(plants)
-    # filter to relevant datapoint types
-    X, y = datapoint.filter_types(zip(X, sources), y, labels)
-    # balance the dataset
-    X, y = datapoint.balance(X, y, False)
-
-    X, sources = zip(*X)
-
-    return np.array(X), np.array(y), np.array(sources)
-
-
-def plot_features(f1, f2):
-    # load plant data from files
-    plants = plant.load_all()
-    X, y = get_data(plants)
-
-    # scale data
-    X = FeatureEnsembleTransform().transform(X)
-    scaler = preprocessing.StandardScaler()
-    scaler.fit(X)
-    X = scaler.transform(X)
-
-    groups = lambda: datapoint.group_types(X, y)
-
-    # visualize the feature extractor
-    colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups())))))
-    for dtype, (Xg, yg) in groups():
-        plt.scatter(Xg[:,f1], Xg[:,f2], c=next(colors), label=dtype)
-    plt.legend()
-    plt.show()
-
-
-def plot_histogram(feature):
-    # load plant data from files
-    plants = plant.load_all()
-    X, y = get_data(plants)
-
-    groups = lambda: datapoint.group_types(X, y)
-
-    # visualize a histogram of the feature
-    for dtype, (Xg, yg) in groups():
-        Xg = FeatureEnsembleTransform().transform(Xg)
-        plt.hist(Xg[:,feature], bins=40, alpha=0.5, label=dtype)
-    plt.legend()
-    plt.show()
+def_labels = ['null', 'ozone', 'H2SO4']
 
 
 class Classifier:
 
     def __init__(self, preproc_pipe, extract_pipe, 
-                 postproc_pipe, classifier, params):
+                 postproc_pipe, classifier, labels=None, params=None):
         self.preproc_pipe = preproc_pipe
         self.extract_pipe = extract_pipe
         self.postproc_pipe = postproc_pipe
         self.classifier = classifier
-        self.params = params
+        self.params = params or [{}]
+        self.labels = labels or def_labels
+
+    def get_data(self, plants=None):
+        # load plants if parameter not provided
+        if plants is None:
+            plants = plant.load_all()
+        # extract windows from plant data
+        X, y, sources = datapoint.generate_all(plants)
+        # filter to relevant datapoint types
+        X, y = datapoint.filter_types(zip(X, sources), y, self.labels)
+        # balance the dataset
+        X, y = datapoint.balance(X, y, False)
+
+        X, sources = zip(*X)
+
+        return self.preprocess(np.array(X), np.array(y), np.array(sources))
 
     def preprocess(self, X, y, sources):
         return pipeline.Pipeline(self.preproc_pipe).fit_transform(X, y), y, sources
 
     def plot(self):
-        # load plant data from files
-        plants = plant.load_all()
-        X, y, sources = get_data(plants)
-        # preprocess data
-        X, y, sources = self.preprocess(X, y, sources)
+        # load and preprocess data
+        X, y, sources = self.get_data()
 
         # transform data on pipeline
         lda_ = lda.LDA(2)
@@ -122,10 +86,8 @@ class Classifier:
         print "Experiments in validation set:", len(valid_plants)
 
         # get X data and y labels
-        X_train, y_train = get_data(train_plants)
-        X_valid, y_valid = get_data(valid_plants)
-        X_train, y_train = self.preprocess(X_train, y_train)
-        X_valid, y_valid = self.preprocess(X_valid, y_valid)
+        X_train, y_train = self.get_data(train_plants)
+        X_valid, y_valid = self.get_data(valid_plants)
 
         print "Datapoints in training set:", len(X_train)
         class_train = [(d[0], len(list(d[1]))) for d in groupby(y_train)]
@@ -168,43 +130,3 @@ class NullClassifier(Classifier):
                 return yy
         y = [set_class(yy, source) for yy, source in zip(y, sources)]
         return Classifier.preprocess(self, X, y, sources)
-
-# bare minimum preprocessing to give valid data
-preproc_min = [
-    ('avg', ElectrodeAvgTransform()),
-    ('poststim', PostStimulusTransform())
-]
-
-# averages electrodes and detrends data
-preproc_standard = [
-    ('avg', ElectrodeAvgTransform()),
-    ('detrend', DetrendTransform()),
-    ('poststim', PostStimulusTransform()),
-]
-
-_ensemble = FeatureEnsembleTransform().extractor
-_window = WindowTransform(_ensemble, 3, False).extractor
-
-# applies feature ensemble to decimated windows
-extract_decimate_ensemble = [
-    ('feature', DecimateWindowTransform(_window)),
-]
-
-# normalizes data
-postproc_standard = [
-    ('scaler', preprocessing.StandardScaler())
-]
-
-# classifier that performs the bare minimum transforms on the raw data
-min_class = Classifier(preproc_min, [], postproc_standard, svm.SVC(), [{}])
-
-# classifier that extracts features from decimated windows
-feat_class = NullClassifier(
-    preproc_standard, 
-    extract_decimate_ensemble, 
-    postproc_standard, 
-    svm.SVC(), 
-    [{}])
-
-if __name__ == "__main__":
-    strat.score()
