@@ -4,7 +4,9 @@ import pywt
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.cm as cm
+import matplotlib.lines as lines
 from itertools import chain, groupby
 
 import plant
@@ -43,12 +45,12 @@ class Classifier:
     def preprocess(self, X, y, sources):
         return pipeline.Pipeline(self.preproc_pipe).fit_transform(X, y), y, sources
 
-    def plot(self, title=None):
+    def _plot(self, dim, title, fig_func, plt_func):
         # load and preprocess data
         X, y, sources = self.get_data()
 
         # transform data on pipeline
-        lda_ = lda.LDA(2)
+        lda_ = lda.LDA(dim)
         lda_pipe = pipeline.Pipeline(
             self.extract_pipe + self.postproc_pipe + [('lda', lda_)])
         lda_pipe.fit(X, y)
@@ -59,22 +61,43 @@ class Classifier:
 
         # visualize the pipeline 
         colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups)))))
+        fig, axes = fig_func()
         for dtype, (Xg, yg) in groups:
             # extract predicted class
             Xg, yp = map(np.array, zip(*Xg))
             tp = (yg == yp)
             Xtp, Xfp = Xg[tp], Xg[~tp]  # find true and false positives
             c = next(colors)
-            plt.scatter(Xtp[:,0], Xtp[:,1], marker='o', c=c, label=dtype)
-            plt.scatter(Xfp[:,0], Xfp[:,1], marker='x', c=c, 
-                        label=dtype + " fp")
 
-        plt.xlabel('LDA Basis vector 1')
-        plt.ylabel('LDA Basis vector 2')
+            plt_func(axes, Xtp, marker='o', c=c, label=dtype)
+            plt_func(axes, Xfp, marker='x', c=c, label=dtype + ' fp')
+
+        axes.set_xlabel('LDA Basis vector 1')
+        axes.set_ylabel('LDA Basis vector 2')
         if title:
-            plt.title(title)
-        plt.legend()
-        plt.show()
+            axes.set_title(title)
+        axes.legend()
+        fig.show()
+
+    def plot(self, title=None):
+        def plt_func(axes, X, marker, c, label):
+            axes.scatter(X[:, 0], X[:, 1], marker=marker, c=c, label=label)
+        self._plot(2, title, plt.subplots, plt_func)
+
+    def plot3d(self, title=None):
+        def fig_func():
+            fig = plt.figure()
+            axes = fig.add_subplot(111, projection='3d')
+            axes.set_zlabel('LDA Basis vector 3')
+            return fig, axes
+        def plt_func(axes, X, marker, c, label):
+            axes.scatter(X[:, 0], X[:, 1], X[:, 2], 
+                         marker=marker, c=c, label=label)
+            # proxy plot to appear on legend
+            axes.plot([0],[0],linestyle='none', 
+                         marker=marker, c=c, label=label)
+
+        self._plot(3, title, fig_func, plt_func)
 
     def score(self):
         # load plant data from files
