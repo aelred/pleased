@@ -40,19 +40,20 @@ feat_class = Classifier(
 
 null_class = NullClassifier(preproc_min, [], postproc_standard, svm.SVC())
 
-def null_only_classify():
+def null_only_plot():
     """
     2014-07-11:
-    Plot classification of null data by experiment.
+    Plot separation of null data by experiment.
     """
     null_class.labels = ['null']
-    null_class.plot()
+    null_class.plot3d('Separation of null data by experiment type')
 
 
-def null_all_classify():
+def null_all_plot():
     """ 
     2014-07-11:
-    Plot classification of null data by experiment as well as non-null data. 
+    Plot separation of null data by experiment as well as non-null data. 
     """
-    null_class.labels = learn.def_labels
-    null_class.plot()
+    null_class.labels = def_labels
+    null_class.plot3d('Separation of null data by experiment type '
+                      'and stimuli by stimulus type')
