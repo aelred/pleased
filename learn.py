@@ -45,7 +45,7 @@ class Classifier:
     def preprocess(self, X, y, sources):
         return pipeline.Pipeline(self.preproc_pipe).fit_transform(X, y), y, sources
 
-    def _plot(self, dim, title, fig_func, plt_func):
+    def _lda(self, dim=None):
         # load and preprocess data
         X, y, sources = self.get_data()
 
@@ -54,8 +54,20 @@ class Classifier:
         lda_pipe = pipeline.Pipeline(
             self.extract_pipe + self.postproc_pipe + [('lda', lda_)])
         lda_pipe.fit(X, y)
+        print lda_.scalings_.shape
         yp = lda_pipe.predict(X)
         X = lda_pipe.transform(X)
+
+        return X, y, yp, lda_
+
+    def plot_lda_scaling(self):
+        X, y, yp, lda_ = self._lda()
+        plt.plot(lda_.scalings_)
+        plt.show()
+
+    def _plot(self, dim, title, fig_func, plt_func):
+        # transform data by linear discriminant analysis
+        X, y, yp = self._lda(dim)
 
         groups = datapoint.group_types(zip(X, yp), y)
 
