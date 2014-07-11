@@ -45,35 +45,56 @@ class Classifier:
     def preprocess(self, X, y, sources):
         return pipeline.Pipeline(self.preproc_pipe).fit_transform(X, y), y, sources
 
-    def _lda(self, dim=None):
+    def _split_data(self, plants=None):
+        # load plants if parameter is not provided
+        if plants is None:
+            plants = plant.load_all()
+
+        # split plant data into training and validation sets
+        random.shuffle(plants)
+        train_len = int(0.75 * len(plants))
+        train_plants = plants[:train_len]
+        valid_plants = plants[train_len:]
+
+        # get X data and y labels
+        X_train, y_train, source_train = self.get_data(train_plants)
+        X_valid, y_valid, source_valid = self.get_data(valid_plants)
+        return X_train, X_valid, y_train, y_valid, source_train, source_valid
+
+    def _lda(self, dim=None, split=True):
         # load and preprocess data
-        X, y, sources = self.get_data()
+        if split:
+            X_train, X_valid, y_train, y_valid, st, sv = self._split_data()
+        else:
+            X_train, y_train, source = self.get_data()
+            X_valid, y_valid = X_train, y_train
 
         # transform data on pipeline
         lda_ = lda.LDA(dim)
         lda_pipe = pipeline.Pipeline(
             self.extract_pipe + self.postproc_pipe + [('lda', lda_)])
-        lda_pipe.fit(X, y)
-        print lda_.scalings_.shape
-        yp = lda_pipe.predict(X)
-        X = lda_pipe.transform(X)
+        lda_pipe.fit(X_train, y_train)
 
-        return X, y, yp, lda_
+        yp_train = lda_pipe.predict(X_train)
+        X_train = lda_pipe.transform(X_train)
+
+        if split:
+            yp_valid = lda_pipe.predict(X_valid)
+            X_valid = lda_pipe.transform(X_valid)
+            return X_train, X_valid, y_train, y_valid, yp_train, yp_valid, lda_
+        else:
+            return X_train, y_train, yp_train, lda_
 
     def plot_lda_scaling(self):
-        X, y, yp, lda_ = self._lda()
+        X, y, yp, lda_ = self._lda(split=False)
         plt.plot(lda_.scalings_)
         plt.show()
 
-    def _plot(self, dim, title, fig_func, plt_func):
-        # transform data by linear discriminant analysis
-        X, y, yp = self._lda(dim)
-
+    def _scatter(self, plt_func, axes, X, y, yp, label, mark_tp, mark_fp):
         groups = datapoint.group_types(zip(X, yp), y)
 
-        # visualize the pipeline 
+        # select a rainbow of colours
         colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups)))))
-        fig, axes = fig_func()
         for dtype, (Xg, yg) in groups:
             # extract predicted class
             Xg, yp = map(np.array, zip(*Xg))
@@ -81,8 +102,23 @@ class Classifier:
             Xtp, Xfp = Xg[tp], Xg[~tp]  # find true and false positives
             c = next(colors)
 
-            plt_func(axes, Xtp, marker='o', c=c, label=dtype)
-            plt_func(axes, Xfp, marker='x', c=c, label=dtype + ' fp')
+            t_label = label + dtype
+            plt_func(axes, Xtp, marker=mark_tp, c=c, label=t_label)
+            plt_func(axes, Xfp, marker=mark_fp, c=c, label=t_label + ' fp')
+
+    def _plot(self, dim, title, fig_func, plt_func, split):
+        # transform data by linear discriminant analysis
+        if split:
+            Xt, Xv, yt, yv, ypt, ypv, lda_ = self._lda(dim, True)
+            train_label = 'train '
+        else:
+            Xt, yt, ypt, lda_ = self._lda(dim, False)
+            train_label = ''
+
+        fig, axes = fig_func()
+        self._scatter(plt_func, axes, Xt, yt, ypt, train_label, 'o', '.')
+        if split:
+            self._scatter(plt_func, axes, Xv, yv, ypv, 'valid ', 'D', '+')
 
         axes.set_xlabel('LDA Basis vector 1')
         axes.set_ylabel('LDA Basis vector 2')
@@ -91,12 +127,12 @@ class Classifier:
         axes.legend()
         fig.show()
 
-    def plot(self, title=None):
+    def plot(self, title=None, split=True):
         def plt_func(axes, X, marker, c, label):
             axes.scatter(X[:, 0], X[:, 1], marker=marker, c=c, label=label)
-        self._plot(2, title, plt.subplots, plt_func)
+        self._plot(2, title, plt.subplots, plt_func, split)
 
-    def plot3d(self, title=None):
+    def plot3d(self, title=None, split=True):
         def fig_func():
             fig = plt.figure()
             axes = fig.add_subplot(111, projection='3d')
@@ -109,24 +145,11 @@ class Classifier:
             axes.plot([0],[0],linestyle='none', 
                          marker=marker, c=c, label=label)
 
-        self._plot(3, title, fig_func, plt_func)
+        self._plot(3, title, fig_func, plt_func, split)
 
     def score(self):
-        # load plant data from files
-        plants = plant.load_all()
-
         # split plant data into training and validation sets
-        random.shuffle(plants)
-        train_len = int(0.75 * len(plants))
-        train_plants = plants[:train_len]
-        valid_plants = plants[train_len:]
-
-        print "Experiments in training set:", len(train_plants)
-        print "Experiments in validation set:", len(valid_plants)
-
-        # get X data and y labels
-        X_train, y_train = self.get_data(train_plants)
-        X_valid, y_valid = self.get_data(valid_plants)
+        X_train, X_valid, y_train, y_valid, st, sv = self._split_data()
 
         print "Datapoints in training set:", len(X_train)
         class_train = [(d[0], len(list(d[1]))) for d in groupby(y_train)]
