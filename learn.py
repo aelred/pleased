@@ -63,7 +63,7 @@ def plot_histogram(feature):
     plt.show()
 
 
-class Strategy:
+class Classifier:
 
     def __init__(self, preproc_pipe, extract_pipe, 
                  postproc_pipe, classifier, params):
@@ -154,7 +154,7 @@ class Strategy:
         print validation_score
 
 
-class NullStrategy(Strategy):
+class NullClassifier(Classifier):
 
     def preprocess(self, X, y, sources):
         """ 
@@ -167,7 +167,7 @@ class NullStrategy(Strategy):
             else:
                 return yy
         y = [set_class(yy, source) for yy, source in zip(y, sources)]
-        return Strategy.preprocess(self, X, y, sources)
+        return Classifier.preprocess(self, X, y, sources)
 
 # bare minimum preprocessing to give valid data
 preproc_min = [
@@ -195,11 +195,11 @@ postproc_standard = [
     ('scaler', preprocessing.StandardScaler())
 ]
 
-# strategy that performs the bare minimum transforms on the raw data
-min_strat = Strategy(preproc_min, [], postproc_standard, svm.SVC(), [{}])
+# classifier that performs the bare minimum transforms on the raw data
+min_class = Classifier(preproc_min, [], postproc_standard, svm.SVC(), [{}])
 
-# strategy that extracts features from decimated windows
-feat_strat = NullStrategy(
+# classifier that extracts features from decimated windows
+feat_class = NullClassifier(
     preproc_standard, 
     extract_decimate_ensemble, 
     postproc_standard, 
