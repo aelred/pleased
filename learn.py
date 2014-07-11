@@ -87,7 +87,7 @@ class Classifier:
 
     def plot_lda_scaling(self):
         X, y, yp, lda_ = self._lda(split=False)
-        plt.plot(lda_.scalings_)
+        plt.plot(np.sum(lda_.scalings_, 1))
         plt.show()
 
     def _scatter(self, plt_func, axes, X, y, yp, label, mark_tp, mark_fp):
