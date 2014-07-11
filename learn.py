@@ -67,7 +67,7 @@ class Classifier:
             c = next(colors)
             plt.scatter(Xtp[:,0], Xtp[:,1], marker='o', c=c, label=dtype)
             plt.scatter(Xfp[:,0], Xfp[:,1], marker='x', c=c, 
-                        label=dtype + " false positive")
+                        label=dtype + " fp")
 
         plt.legend()
         plt.show()
