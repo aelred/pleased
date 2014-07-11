@@ -27,9 +27,6 @@ postproc_standard = [
     ('scaler', preprocessing.StandardScaler())
 ]
 
-# classifier that performs the bare minimum transforms on the raw data
-min_class = Classifier(preproc_min, [], postproc_standard, svm.SVC())
-
 # classifier that extracts features from decimated windows
 feat_class = Classifier(
     preproc_standard, 
@@ -37,23 +34,39 @@ feat_class = Classifier(
     postproc_standard, 
     svm.SVC())
 
+min_class = Classifier(preproc_min, [], postproc_standard, svm.SVC())
+
+def basic_separator():
+    """
+    2014-07-11
+    Plot separation of labels with minimal pre-processing of the data.
+    """
+    min_class.plot('Separation with minimal pre-processing.', False)
+
+def basic_separator_validation():
+    """
+    2014-07-11
+    Test basic separator using separate training and validation sets.
+    """
+    min_class.plot('Separation with minimal pre-processing.', True)
 
 null_class = NullClassifier(preproc_min, [], postproc_standard, svm.SVC())
 
+
 def null_only_plot():
     """
-    2014-07-11:
+    2014-07-11
     Plot separation of null data by experiment.
     """
     null_class.labels = ['null']
-    null_class.plot3d('Separation of null data by experiment type')
+    null_class.plot3d('Separation of null data by experiment type', False)
 
 
 def null_all_plot():
     """ 
-    2014-07-11:
+    2014-07-11
     Plot separation of null data by experiment as well as non-null data. 
     """
     null_class.labels = def_labels
     null_class.plot3d('Separation of null data by experiment type '
-                      'and stimuli by stimulus type')
+                      'and stimuli by stimulus type', False)
