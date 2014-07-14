@@ -108,10 +108,9 @@ class Classifier:
             c = next(colors)
 
             t_label = label + dtype
-            scatters.append(plt_func(axes, Xtp, marker=mark_tp, 
-                            c=c, label=t_label))
-            scatters.append(plt_func(axes, Xfp, marker=mark_fp, 
-                            c=c, label=t_label + ' fp'))
+            plot_tp = plt_func(axes, Xtp, marker=mark_tp, c=c, label=t_label)
+            plot_fp = plt_func(axes, Xfp, marker=mark_fp, c=c, label=None)
+            scatters.append((plot_tp, plot_fp))
 
         return scatters
 
@@ -157,8 +156,9 @@ class Classifier:
             scatter = scatter_legend[leg_line]
 
             # toggle visibility
-            vis = not scatter.get_visible()
-            scatter.set_visible(vis)
+            for s in scatter:
+                vis = not s.get_visible()
+                s.set_visible(vis)
 
             # set visibility on legend
             if vis:
