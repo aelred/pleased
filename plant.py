@@ -53,6 +53,7 @@ def load_all(path="."):
             plants += load_txt(root)
 
     # save generated plant data to pickle file for faster loading
+    print "Writing to pickle file"
     with file(plant_file, 'w') as f:
         pickle.dump(plants, f)
 
@@ -84,7 +85,12 @@ def load_txt(path):
     while os.path.exists(os.path.join(path, "blk%d" % i)):
 
         blk = os.path.join(path, "blk%d" % i)
+
+        # check common data file locations
         data = os.path.join(blk, "data2.txt")
+        if not os.path.isfile(data):
+            data = os.path.join(blk, "data.txt")
+
         marks = os.path.join(blk, "marks.txt")
 
         with file(marks, 'r') as f:
@@ -96,11 +102,15 @@ def load_txt(path):
 
         with file(data, 'r') as f:
             reader = csv.reader(f, delimiter='\t')
-            for num, row in enumerate(reader):
-                new_data = row[0:-1]  # remove empty last column
-                raw_data.append(map(float, new_data))
 
-            mark_offset += num
+            for row in reader:
+                new_data = row[0:-1]  # remove empty last column
+                try:
+                    raw_data.append(map(float, new_data))
+                    mark_offset += 1
+                except ValueError:
+                    # catch case where looking at header
+                    pass
 
         i += 1
 
