@@ -95,6 +95,7 @@ class Classifier:
 
         # select a rainbow of colours
         colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups)))))
+        scatters = []
         for dtype, (Xg, yg) in groups:
             # extract predicted class
             Xg, yp = map(np.array, zip(*Xg))
@@ -103,8 +104,12 @@ class Classifier:
             c = next(colors)
 
             t_label = label + dtype
-            plt_func(axes, Xtp, marker=mark_tp, c=c, label=t_label)
-            plt_func(axes, Xfp, marker=mark_fp, c=c, label=t_label + ' fp')
+            scatters.append(plt_func(axes, Xtp, marker=mark_tp, 
+                            c=c, label=t_label))
+            scatters.append(plt_func(axes, Xfp, marker=mark_fp, 
+                            c=c, label=t_label + ' fp'))
+
+        return scatters
 
     def _plot(self, dim, title, fig_func, plt_func, split):
         # transform data by linear discriminant analysis
@@ -116,20 +121,57 @@ class Classifier:
             train_label = ''
 
         fig, axes = fig_func()
-        self._scatter(plt_func, axes, Xt, yt, ypt, train_label, 'o', '.')
+
         if split:
-            self._scatter(plt_func, axes, Xv, yv, ypv, 'valid ', 'D', '+')
+            scatters = self._scatter(plt_func, axes, Xt, yt, ypt, 
+                                     train_label, '+', 'x')
+            scatters += self._scatter(plt_func, axes, Xv, yv, ypv, 
+                                      'valid ', 'o', 's')
+        else:
+            scatters = self._scatter(plt_func, axes, Xt, yt, ypt, 
+                                     train_label, 'o', 's')
 
         axes.set_xlabel('LDA Basis vector 1')
         axes.set_ylabel('LDA Basis vector 2')
         if title:
             axes.set_title(title)
-        axes.legend(bbox_to_anchor=(1.12, 1.0)).draggable()
-        fig.show()
+
+        legend = axes.legend(fancybox=True, bbox_to_anchor=(1.12, 1.0))
+        scatter_legend = {}
+        for leg_line, scatter in zip(legend.get_texts(), scatters):
+            print leg_line, scatter
+            leg_line.set_picker(True)
+            scatter_legend[leg_line] = scatter
+
+        def on_pick(event):
+            # hacky solution to weird matplotlib bug
+            on_pick.flag = not on_pick.flag
+            if on_pick.flag:
+                return
+
+            # allow hiding/showing scatter plots
+            leg_line = event.artist
+            scatter = scatter_legend[leg_line]
+
+            # toggle visibility
+            vis = not scatter.get_visible()
+            scatter.set_visible(vis)
+
+            # set visibility on legend
+            if vis:
+                leg_line.set_alpha(1.0)
+            else:
+                leg_line.set_alpha(0.2)
+            fig.canvas.draw()
+        on_pick.flag = True 
+
+        fig.canvas.mpl_connect('pick_event', on_pick)
+
+        plt.show()
 
     def plot(self, title=None, split=True):
         def plt_func(axes, X, marker, c, label):
-            axes.scatter(X[:, 0], X[:, 1], marker=marker, c=c, label=label)
+            return axes.scatter(X[:, 0], X[:, 1], marker=marker, c=c, label=label)
         self._plot(2, title, plt.subplots, plt_func, split)
 
     def plot3d(self, title=None, split=True):
@@ -139,11 +181,11 @@ class Classifier:
             axes.set_zlabel('LDA Basis vector 3')
             return fig, axes
         def plt_func(axes, X, marker, c, label):
-            axes.scatter(X[:, 0], X[:, 1], X[:, 2], 
-                         marker=marker, c=c, label=label)
             # proxy plot to appear on legend
             axes.plot([0],[0],linestyle='none', 
                          marker=marker, c=c, label=label)
+            return axes.scatter(X[:, 0], X[:, 1], X[:, 2], 
+                                marker=marker, c=c, label=label)
 
         self._plot(3, title, fig_func, plt_func, split)
 
