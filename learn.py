@@ -143,7 +143,6 @@ class Classifier:
         legend = axes.legend(fancybox=True, bbox_to_anchor=(1.12, 1.0))
         scatter_legend = {}
         for leg_line, scatter in zip(legend.get_texts(), scatters):
-            print leg_line, scatter
             leg_line.set_picker(True)
             scatter_legend[leg_line] = scatter
 
