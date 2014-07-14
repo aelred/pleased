@@ -4,7 +4,7 @@ from scipy.stats import linregress
 import datapoint
 from scipy.signal import decimate
 
-class FeatureExtractor(base.BaseEstimator):
+class Extractor(base.BaseEstimator):
     """ Extracts features from each datapoint. """
 
     def __init__(self, extractor=None):
@@ -18,7 +18,7 @@ class FeatureExtractor(base.BaseEstimator):
         return self
 
 
-class MeanSubtractTransform(FeatureExtractor):
+class MeanSubtractTransform(Extractor):
     """ Subtracts the mean of the data from every point. """
 
     def extractor(self, x):
@@ -26,7 +26,7 @@ class MeanSubtractTransform(FeatureExtractor):
         return [xx-m for xx in x]
 
 
-class ClipTransform(FeatureExtractor):
+class ClipTransform(Extractor):
     """ Cut some amount from the end of the data. """
 
     def __init__(self, size):
@@ -36,7 +36,7 @@ class ClipTransform(FeatureExtractor):
         return x[0:int(len(x)*self.size)]
 
 
-class DecimateTransform(FeatureExtractor):
+class DecimateTransform(Extractor):
     """ Shrink signal by applying a low-pass filter. """
 
     def __init__(self, factor):
@@ -48,7 +48,7 @@ class DecimateTransform(FeatureExtractor):
         return decimate(x, self.factor, ftype='fir')
 
 
-class WindowTransform(FeatureExtractor):
+class WindowTransform(Extractor):
     """ Apply a function to overlapping windows. """
 
     def __init__(self, f, N, hanning=True):
@@ -70,7 +70,7 @@ class WindowTransform(FeatureExtractor):
         return np.concatenate(windows)
 
 
-class DecimateWindowTransform(FeatureExtractor):
+class DecimateWindowTransform(Extractor):
     """ Decimate the data at different scales and apply a function to each. """
 
     def __init__(self, f):
@@ -86,7 +86,7 @@ class DecimateWindowTransform(FeatureExtractor):
         return np.concatenate(results)
 
 
-class MapElectrodeTransform(FeatureExtractor):
+class MapElectrodeTransform(Extractor):
     """ Apply a function to each electrode. """
 
     def __init__(self, f):
@@ -96,7 +96,7 @@ class MapElectrodeTransform(FeatureExtractor):
         return np.array(zip(*[self.f(np.array(xx)) for xx in zip(*x)]))
 
 
-class DiscreteWaveletTransform(FeatureExtractor):
+class DiscreteWaveletTransform(Extractor):
     """ Perform a wavelet transform on the data. """
 
     def __init__(self, kind, L, D):
@@ -109,7 +109,7 @@ class DiscreteWaveletTransform(FeatureExtractor):
         return np.concatenate(wavelet[0:self.L-self.D])
 
 
-class DetrendTransform(FeatureExtractor):
+class DetrendTransform(Extractor):
     """ Remove any linear trends in the data. """
 
     def linear(self, xs, m, c):
@@ -123,7 +123,7 @@ class DetrendTransform(FeatureExtractor):
         # subtract extrapolated line from data to produce new dataset
         return x - self.linear(times, m, c)
 
-class PostStimulusTransform(FeatureExtractor):
+class PostStimulusTransform(Extractor):
     """ Remove any pre-stimulus data from the datapoint. """
 
     def __init__(self, offset=0):
@@ -133,7 +133,7 @@ class PostStimulusTransform(FeatureExtractor):
         return x[self.offset-datapoint.window_offset:]
 
 
-class PreStimulusTransform(FeatureExtractor):
+class PreStimulusTransform(Extractor):
     """ 
     Removes any post-stimulus data.
     If the classifier can handle this, it must be infering information from
@@ -144,21 +144,21 @@ class PreStimulusTransform(FeatureExtractor):
         return x[0:-datapoint.window_offset]
 
 
-class ElectrodeAvgTransform(FeatureExtractor):
+class ElectrodeAvgTransform(Extractor):
     """ Take the average of the two electrode values. """
 
     def extractor(self, x):
         return [(xx[0] + xx[1]) / 2.0 for xx in x]
 
 
-class ElectrodeDiffTransform(FeatureExtractor):
+class ElectrodeDiffTransform(Extractor):
     """ Take the difference of the two electrode values. """
 
     def extractor(self, x):
         return [xx[0] - xx[1] for xx in x]
 
 
-class MovingAvgTransform(FeatureExtractor):
+class MovingAvgTransform(Extractor):
     """ Take a moving average of time series data. """
 
     def __init__(self, n):
@@ -180,7 +180,7 @@ class MovingAvgTransform(FeatureExtractor):
         return mov_avg
 
 
-class FeatureEnsembleTransform(FeatureExtractor):
+class FeatureEnsembleTransform(Extractor):
     """ Take an ensemble of different features from the data. """
 
     def extractor(self, x):
