@@ -14,12 +14,12 @@ preproc_standard = [
     ('poststim', PostStimulusTransform()),
 ]
 
-_ensemble = FeatureEnsembleTransform().extractor
-_window = WindowTransform(_ensemble, 3, False).extractor
+ensemble = FeatureEnsembleTransform().extractor
+window = WindowTransform(ensemble, 3, False).extractor
 
 # applies feature ensemble to decimated windows
 extract_decimate_ensemble = [
-    ('feature', DecimateWindowTransform(_window)),
+    ('feature', DecimateWindowTransform(window)),
 ]
 
 # normalizes data
@@ -70,3 +70,55 @@ def null_all_plot():
     null_class.labels = def_labels
     null_class.plot3d('Separation of null data by experiment type '
                       'and stimuli by stimulus type', False)
+
+
+def basic_separator_features():
+    """
+    2014-07-14
+    Plot which features are important for the basic LDA separator.
+    """
+    min_class.plot_lda_scaling(False, 'Significance of time series features')
+
+
+def linear_detrending():
+    """
+    2014-07-14
+    Plot separation with linear detrending applied to remove experimental bias.
+    """
+    detrend_class = Classifier(preproc_standard, [], postproc_standard, svm.SVC())
+    detrend_null = NullClassifier(preproc_standard, [], 
+                                  postproc_standard, svm.SVC())
+    detrend_class.plot('Separation with linear detrending')
+    detrend_null.plot3d('Separation of null data with linear detrending', False)
+
+
+def basic_features():
+    """
+    2014-07-14
+    Plot separation of basic feature extraction methods based on the mean.
+    """
+    def extract(x):
+        return [mean(x), mean(map(abs, differential(x))), 
+                mean(map(abs, differential(differential(x))))]
+    feature_class = Classifier(preproc_standard, 
+                               [('features', Extractor(extract))], 
+                               postproc_standard, svm.SVC())
+    feature_class.plot('Separation using basic features')
+    feature_class.plot_lda_scaling(True, 'Significance of basic features',
+        ['mean', 'diff1', 'diff2'])
+
+
+def basic_features2():
+    """
+    2014-07-14
+    Plot separation using another set of basic features based on variance.
+    """
+    def extract(x):
+        return [var(x), var(differential(x)), 
+                var(differential(differential(x)))]
+    feature_class = Classifier(preproc_standard, 
+                               [('features', Extractor(extract))], 
+                               postproc_standard, svm.SVC())
+    feature_class.plot('Separation using basic features')
+    feature_class.plot_lda_scaling(True, 'Significance of basic features',
+        ['var', 'var(diff1)', 'var(diff2)'])
