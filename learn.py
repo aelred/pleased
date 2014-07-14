@@ -85,12 +85,17 @@ class Classifier:
         else:
             return X_train, y_train, yp_train, lda_
 
-    def plot_lda_scaling(self, title=None):
+    def plot_lda_scaling(self, barchart, title=None, labels=None):
         X, y, yp, lda_ = self._lda(split=False)
-        plt.plot(np.sum(lda_.scalings_ ** 2, 1))
+        data = np.sum(np.absolute(lda_.scalings_), 1)
+        if barchart:
+            plt.bar(range(len(data)), data)
+            plt.xticks([x+0.5 for x in range(len(data))], labels)
+        else:
+            plt.plot(data)
         if title:
             plt.title(title)
-        plt.xlabel('Feature number')
+        plt.xlabel('Feature')
         plt.ylabel('Significance by LDA')
         plt.show()
 
