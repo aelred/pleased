@@ -167,17 +167,37 @@ class MovingAvgTransform(Extractor):
     def extractor(self, x):
         mov_avg = []
 
+        # maintains a running sum of window
+        accum = sum(x[:self.n])
+
         for i, xx in enumerate(x):
-            start = i-self.n/2
-            if start < 0:
-                start = 0
-            end = i+self.n/2
-            if end > len(x):
-                end = len(x)
-            window = x[start:end]
-            mov_avg.append(mean(window))
+            # calculate mean from accumulator
+            avg = accum / self.n
+            mov_avg.append(avg)
+
+            # add end of window to accumulator
+            try:
+                accum += x[i+self.n]
+            except IndexError:
+                # leave loop when reach end
+                break
+
+            # remove start of window from accumulator
+            accum -= x[i]
 
         return mov_avg
+
+
+class NoiseTransform(Extractor):
+    """ Extract noise from data. """
+
+    def __init__(self, n):
+        self.mov_avg = MovingAvgTransform(n)
+        self.n = n
+
+    def extractor(self, x):
+        smoothed = self.mov_avg.extractor(x)
+        return [xx - ss for xx, ss in zip(x[self.n/2:-self.n/2], smoothed)]
 
 
 class FeatureEnsembleTransform(Extractor):
