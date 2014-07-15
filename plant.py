@@ -4,7 +4,7 @@ import numpy
 import re
 import os
 import csv
-import pickle
+import cPickle
 from scipy.signal import decimate
 
 stim_types = {
@@ -43,7 +43,7 @@ def load_all(path="."):
     if os.path.isfile(plant_file):
         with file(plant_file, 'r') as f:
             print "Loading from generated file %s" % plant_file
-            return pickle.load(f)
+            return cPickle.load(f)
 
     plants = []
 
@@ -55,7 +55,7 @@ def load_all(path="."):
     # save generated plant data to pickle file for faster loading
     print "Writing to pickle file"
     with file(plant_file, 'w') as f:
-        pickle.dump(plants, f)
+        cPickle.dump(plants, f)
 
     return plants
 
@@ -104,7 +104,12 @@ def load_txt(path):
             reader = csv.reader(f, delimiter='\t')
 
             for row in reader:
-                new_data = row[0:-1]  # remove empty last column
+                new_data = row[:-1]  # skip last column
+
+                # skip empty rows
+                if len(new_data) == 0:
+                    continue
+                    
                 try:
                     raw_data.append(map(float, new_data))
                     mark_offset += 1
@@ -115,6 +120,9 @@ def load_txt(path):
         i += 1
 
     fname = os.path.basename(path)
+    # WHY IS ALL THE DATA STRUCTURED DIFFERENTLY???
+    if fname == 'Electrical signal':
+        fname = os.path.basename(os.path.split(path)[0])
 
     return format_raw(fname, raw_data, stimuli, sample_freq)
 
@@ -169,10 +177,15 @@ def format_raw(name, raw_data, raw_stimuli, sample_freq):
     stimuli = []
 
     readings = numpy.array(raw_data)
+    print readings.shape
 
     for stim in raw_stimuli:
         # find type of stimulus
         type_ = None
+
+        if 'stop' in stim.type.lower():
+            # this is the end of a stimulus, don't use
+            continue
 
         for t, aliases in stim_types.iteritems():
             for alias in aliases:
