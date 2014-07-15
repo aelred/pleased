@@ -122,3 +122,45 @@ def basic_features2():
     feature_class.plot('Separation using basic features')
     feature_class.plot_lda_scaling(True, 'Significance of basic features',
         ['var', 'var(diff1)', 'var(diff2)'])
+
+
+def feature_ensemble():
+    """
+    2014-07-15
+    Plot separation using many features.
+    """
+    feature_class = Classifier(preproc_standard, 
+                               [('features', FeatureEnsembleTransform())], 
+                               postproc_standard, svm.SVC())
+    feature_class.plot('Separation using multiple time-series features')
+    feature_class.plot_lda_scaling(True, 'Significance of time-series features',
+        ['mean', 'mean(diff1)', 'mean(diff2)', 'var', 'var(diff1)', 'var(diff2)',
+         'hmob', 'hcom', 'skewness', 'kurtosis'])
+
+
+def noise_extraction():
+    """
+    2014-07-15
+    Plot separation using the noise of the signal.
+    """
+    classifier = Classifier(preproc_min, 
+                            [('noise', NoiseTransform(100)), 
+                             ('features', FeatureEnsembleTransform())], 
+                            postproc_standard, svm.SVC())
+    classifier.plot('Separation using noise in time-series')
+    classifier.plot_lda_scaling(False, 'Significance of noise in time-series')
+
+
+def noise_features():
+    """
+    2014-07-15
+    Plot separation using the noise of the signal and the feature ensemble.
+    """
+    classifier = Classifier(preproc_min, 
+                            [('noise', NoiseTransform(100)), 
+                             ('features', FeatureEnsembleTransform())], 
+                            postproc_standard, svm.SVC())
+    classifier.plot('Separation using noise and feature ensemble')
+    classifier.plot_lda_scaling(True, 'Significance of features in noise.',
+        ['mean', 'mean(diff1)', 'mean(diff2)', 'var', 'var(diff1)', 'var(diff2)',
+         'hmob', 'hcom', 'skewness', 'kurtosis'])
