@@ -184,14 +184,22 @@ class FeatureEnsembleTransform(Extractor):
     """ Take an ensemble of different features from the data. """
 
     def extractor(self, x):
-        diff = mean(map(abs, differential(x)))
-        noise = mean(map(abs, differential(differential(x))))
+        avg = mean(x)
+        diff1 = mean(map(abs, differential(x)))
+        diff2 = mean(map(abs, differential(differential(x))))
+
         vari = var(x)
-        vardiff = var(differential(x))
-        varnoise = var(differential(differential(x)))
-        hjorth_mob = vardiff**0.5 / vari**0.5
-        hjorth_com = (varnoise**0.5 / vardiff**0.5) / hjorth_mob
-        return [diff, noise, vari, vardiff, hjorth_mob, hjorth_com]
+        vardiff1 = var(differential(x))
+        vardiff2 = var(differential(differential(x)))
+
+        hjorth_mob = vardiff1**0.5 / vari**0.5
+        hjorth_com = (vardiff2**0.5 / vardiff1**0.5) / hjorth_mob
+
+        skew = skewness(x)
+        kurt = kurtosis(x)
+
+        return [avg, diff1, diff2, vari, vardiff1, vardiff2, 
+                hjorth_mob, hjorth_com, skew, kurt]
 
 
 def differential(x):
@@ -206,12 +214,27 @@ def mean(x):
     return sum(x) / len(x)
 
 
+def moment(x, n):
+    """ Returns: The nth central moment. """
+    m = mean(x)
+    return sum([(xx-m)**n for xx in x]) / len(x)
+
+
 def var(x):
     """ Returns: The variance of x. """
-    m = mean(x)
-    return sum([(xx-m)**2 for xx in x]) / len(x)
+    return moment(x, 2)
 
 
 def stdev(x):
     """ Returns: The standard deviation of x. """
     return var(x)**0.5
+
+
+def skewness(x):
+    """ Returns: The sample skewness of x. """
+    return moment(x, 3) / (var(x) ** (3/2))
+
+
+def kurtosis(x):
+    """ Returns: The sample kurtosis of x. """
+    return moment(x, 4) / (var(x) ** 2) - 3
