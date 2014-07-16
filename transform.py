@@ -103,6 +103,13 @@ class MapElectrodeTransform(Extractor):
         return np.array(zip(*[self.f(np.array(xx)) for xx in zip(*x)]))
 
 
+class FourierTransform(Extractor):
+    """ Perform a Fourier transform on the data. """
+
+    def extractor(self, x):
+        return np.fft.rfft(x)
+
+
 class DiscreteWaveletTransform(Extractor):
     """ Perform a wavelet transform on the data. """
 

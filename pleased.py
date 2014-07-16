@@ -190,3 +190,16 @@ def separate_electrodes():
     classifier = Classifier(preproc_separate, features_separate, 
                             postproc_separate, svm.SVC())
     classifier.plot('Separation using both electrode readings')
+
+
+def fourier_feature():
+    """
+    2014-07-16
+    Plot separation using a Fourier transform of the signal.
+    """
+
+    features = [('noise', NoiseTransform(100)), ('fourier', FourierTransform())]
+
+    classifier = Classifier(preproc_standard, features, 
+                            postproc_standard, svm.SVC())
+    classifier.plot('Separation using a Fourier transform')
