@@ -36,6 +36,13 @@ class ClipTransform(Extractor):
         return x[0:int(len(x)*self.size)]
 
 
+class ConcatTransform(Extractor):
+    """ Reshape multi-dimensional data into one dimension. """
+
+    def extractor(self, x):
+        return np.ravel(np.array(x))
+
+
 class DecimateTransform(Extractor):
     """ Shrink signal by applying a low-pass filter. """
 

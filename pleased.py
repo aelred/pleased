@@ -164,3 +164,29 @@ def noise_features():
     classifier.plot_lda_scaling(True, 'Significance of features in noise.',
         ['mean', 'mean(diff1)', 'mean(diff2)', 'var', 'var(diff1)', 'var(diff2)',
          'hmob', 'hcom', 'skewness', 'kurtosis'])
+
+
+def separate_electrodes():
+    """
+    2014-07-16
+    Plot separation when operations are performed on each electrode separately.
+    """
+
+    # detrend each electrode individually
+    preproc_separate = [
+        ('detrend', MapElectrodeTransform(DetrendTransform().extractor)),
+        ('poststim', MapElectrodeTransform(PostStimulusTransform().extractor)),
+    ]
+
+    features_separate = [
+        ('features', MapElectrodeTransform(FeatureEnsembleTransform().extractor))
+    ]
+
+    # concatenate results together
+    postproc_separate = [
+        ('concat', ConcatTransform())
+    ] + postproc_standard
+
+    classifier = Classifier(preproc_separate, features_separate, 
+                            postproc_separate, svm.SVC())
+    classifier.plot('Separation using both electrode readings')
