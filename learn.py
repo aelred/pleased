@@ -19,11 +19,13 @@ def_labels = ['null', 'ozone', 'H2SO4']
 class Classifier:
 
     def __init__(self, preproc_pipe, extract_pipe, 
-                 postproc_pipe, classifier, labels=None, params=None):
+                 postproc_pipe, classifier, 
+                 lda_=None, labels=None, params=None):
         self.preproc_pipe = preproc_pipe
         self.extract_pipe = extract_pipe
         self.postproc_pipe = postproc_pipe
         self.classifier = classifier
+        self.lda = lda_ or lda.LDA()
         self.params = params or [{}]
         self.labels = labels or def_labels
 
@@ -61,7 +63,7 @@ class Classifier:
         X_valid, y_valid, source_valid = self.get_data(valid_plants)
         return X_train, X_valid, y_train, y_valid, source_train, source_valid
 
-    def _lda(self, dim=None, split=True):
+    def _run_lda(self, dim=None, split=True):
         # load and preprocess data
         if split:
             X_train, X_valid, y_train, y_valid, st, sv = self._split_data()
@@ -70,9 +72,8 @@ class Classifier:
             X_valid, y_valid = X_train, y_train
 
         # transform data on pipeline
-        lda_ = lda.LDA(dim)
         lda_pipe = pipeline.Pipeline(
-            self.extract_pipe + self.postproc_pipe + [('lda', lda_)])
+            self.extract_pipe + self.postproc_pipe + [('lda', self.lda)])
         lda_pipe.fit(X_train, y_train)
 
         yp_train = lda_pipe.predict(X_train)
@@ -81,13 +82,13 @@ class Classifier:
         if split:
             yp_valid = lda_pipe.predict(X_valid)
             X_valid = lda_pipe.transform(X_valid)
-            return X_train, X_valid, y_train, y_valid, yp_train, yp_valid, lda_
+            return X_train, X_valid, y_train, y_valid, yp_train, yp_valid
         else:
-            return X_train, y_train, yp_train, lda_
+            return X_train, y_train, yp_train
 
     def plot_lda_scaling(self, barchart, title=None, labels=None):
-        X, y, yp, lda_ = self._lda(split=False)
-        data = np.sum(np.absolute(lda_.scalings_), 1)
+        X, y, yp = self._run_lda(split=False)
+        data = np.sum(np.absolute(self.lda.scalings_), 1)
         if barchart:
             plt.bar(range(len(data)), data)
             plt.xticks([x+0.5 for x in range(len(data))], labels)
@@ -122,10 +123,10 @@ class Classifier:
     def _plot(self, dim, title, fig_func, plt_func, split):
         # transform data by linear discriminant analysis
         if split:
-            Xt, Xv, yt, yv, ypt, ypv, lda_ = self._lda(dim, True)
+            Xt, Xv, yt, yv, ypt, ypv = self._run_lda(dim, True)
             train_label = 'train '
         else:
-            Xt, yt, ypt, lda_ = self._lda(dim, False)
+            Xt, yt, ypt = self._run_lda(dim, False)
             train_label = ''
 
         fig, axes = fig_func()

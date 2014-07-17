@@ -1,5 +1,6 @@
 from learn import *
 from transform import *
+from sda import SDA
 
 # bare minimum preprocessing to give valid data
 preproc_min = [
@@ -203,3 +204,14 @@ def fourier_feature():
     classifier = Classifier(preproc_standard, features, 
                             postproc_standard, svm.SVC())
     classifier.plot('Separation using a Fourier transform')
+
+
+def sda_separation():
+    """
+    2014-07-17
+    Plot separation using Sparse Discriminant Analysis.
+    """
+
+    classifier = Classifier(preproc_min, [], postproc_standard, svm.SVC(), SDA())
+    classifier.plot('Separation using SDA')
+    classifier.plot_lda_scaling(False, 'Significance of features using SDA scaling')

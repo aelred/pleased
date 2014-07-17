@@ -1,8 +1,10 @@
 """ Provides an implementation of Sparse Discriminant Analysis. """
 
-from sklearn import lda, preprocessing, utils
+from sklearn import lda, preprocessing
+from sklearn.utils import check_arrays, column_or_1d
 import numpy as np
 import random
+from mlabwrap import mlab
 
 
 class SDA(lda.LDA):
@@ -14,40 +16,52 @@ class SDA(lda.LDA):
     In other words, the number of features used is minimized.
     """
 
-    def fit(self, X, y):
-        X, y = utils.check_arrays(X, y, sparse_format='dense')
-        y = utils.column_or_1d(y, warn=True)
+    def fit(self, X, y, store_covariance=False, tol=1.0e-6):
+        X, y = check_arrays(X, y, sparse_format='dense')
+        y = column_or_1d(y, warn=True)
         self.classes_, y = np.unique(y, return_inverse=True)
-
-        n, p = X.shape
-        K = len(self.classes_)
-
-        if K < 2:
+        n_samples, n_features = X.shape
+        n_classes = len(self.classes_)
+        if n_classes < 2:
             raise ValueError('y has less than 2 classes')
         if self.priors is None:
-            self.priors_ = np.bincount(y) / float(K)
+            self.priors_ = np.bincount(y) / float(n_samples)
         else:
             self.priors_ = self.priors
 
-        # 1. Let Y be a n x K matrix of indicator variables
-        y_dict = dict(enumerate(y))
+        # Group means n_classes*n_features matrix
+        means = []
+        Xc = []
+        cov = None
+        if store_covariance:
+            cov = np.zeros((n_features, n_features))
+        for ind in range(n_classes):
+            Xg = X[y == ind, :]
+            meang = Xg.mean(0)
+            means.append(meang)
+            # centered group data
+            Xgc = Xg - meang
+            Xc.append(Xgc)
+            if store_covariance:
+                cov += np.dot(Xgc.T, Xgc)
+        if store_covariance:
+            cov /= (n_samples - n_classes)
+            self.covariance_ = cov
+
+        self.means_ = np.asarray(means)
+
+        # Transform Y into labels matrix
         lb = preprocessing.LabelBinarizer()
-        lb.fit(y)
         Y = lb.fit_transform(y)
 
-        # 2. Let D = (1/n)Y'Y
-        D = (1 / n) * Y.T * Y
+        # Overall mean
+        xbar = np.dot(self.priors_, self.means_)
 
-        # 3. Let Q[0] be a K x 1 matrix of 1's.
-        Q[0] = np.ones((K, 1))
-
-        # 4. For k = 0,....,q, compute a new SDA direction pair (theta[k], beta[k])
-        for k = range(q):
-            # (a) Initialize theta[k] = (I - QkQk'D)theta_s, where theta_s is a 
-            #     random K-vector, and then normalize theta[k] so that 
-            #     theta[k]' * D * theta[k] = 1.
-            theta_s = np.array([random.uniform(-1.0, 1.0) for i in range(K)])
-            theta[k] = (np.identity() - Q[k] * Q[k].T * D) - theta_s
-            theta[k] *= 1.0 / (theta[k].T * D * theta[k])**0.5
-
-            # ...
+        # Enter into SDA function
+        b = mlab.slda(X, Y, tol=tol, Q=self.n_components)
+        self.scalings_ = b
+        self.xbar_ = xbar
+        # weight vectors / centroids
+        self.coef_ = np.dot(self.means_ - self.xbar_, self.scalings_)
+        self.intercept_ = (-0.5 * np.sum(self.coef_ ** 2, axis=1) +
+                           np.log(self.priors_))
