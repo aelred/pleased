@@ -10,9 +10,10 @@ from sklearn.utils import check_arrays, column_or_1d
 import numpy as np
 import random
 import math
+import pyper
 
 
-class SDA(lda.LDA):
+class SDA:
     """
     Sparse Discriminant Analysis (SDA)
 
@@ -21,55 +22,48 @@ class SDA(lda.LDA):
     In other words, the number of features used is minimized.
     """
 
-    def fit(self, X, y, store_covariance=False, tol=1.0e-6):
+    def __init__(self, n_components=None):
+        self.n_components = n_components
+        self.r = pyper.R()
+        self.r('library(sparseLDA)')
+
+    def fit(self, X, y, tol=1.0e-6):
         X, y = check_arrays(X, y, sparse_format='dense')
         y = column_or_1d(y, warn=True)
         self.classes_, y = np.unique(y, return_inverse=True)
         n_samples, n_features = X.shape
         n_classes = len(self.classes_)
+        n_components = self.n_components or n_classes-1
         if n_classes < 2:
             raise ValueError('y has less than 2 classes')
-        if self.priors is None:
-            self.priors_ = np.bincount(y) / float(n_samples)
-        else:
-            self.priors_ = self.priors
 
-        # Group means n_classes*n_features matrix
-        means = []
-        Xc = []
-        cov = None
-        if store_covariance:
-            cov = np.zeros((n_features, n_features))
-        for ind in range(n_classes):
-            Xg = X[y == ind, :]
-            meang = Xg.mean(0)
-            means.append(meang)
-            # centered group data
-            Xgc = Xg - meang
-            Xc.append(Xgc)
-            if store_covariance:
-                cov += np.dot(Xgc.T, Xgc)
-        if store_covariance:
-            cov /= (n_samples - n_classes)
-            self.covariance_ = cov
-
-        self.means_ = np.asarray(means)
-
-        # Transform Y into labels matrix
+        # Transform y into labels matrix Y
         lb = preprocessing.LabelBinarizer()
         Y = lb.fit_transform(y)
 
-        # Overall mean
-        xbar = np.dot(self.priors_, self.means_)
-
         # Enter into SDA function
-        b = mlab.slda(X, Y, tol=tol, Q=self.n_components)
-        self.scalings_ = b
-        self.xbar_ = xbar
-        # weight vectors / centroids
-        self.coef_ = np.dot(self.means_ - self.xbar_, self.scalings_)
-        self.intercept_ = (-0.5 * np.sum(self.coef_ ** 2, axis=1) +
-                           np.log(self.priors_))
+        self.r['X'] = np.matrix(X)
+        self.r['Y'] = np.matrix(Y)
+        self.r['colnames(Y)'] = self.classes_
+        self.r['tol'] = tol
+        self.r['Q'] = n_components
+        print self.r('out <- sda(X, Y, tol=tol, Q=Q, stop=-100, trace=TRUE)')
+
+        b = self.r['out']['beta']
+        v = self.r['out']['varIndex']
+        self.scalings_ = np.zeros((n_features, n_components))
+        for i, scales in zip(v, b):
+            self.scalings_[i] = scales
+
+    def transform(self, X):
+        self.r['X'] = np.matrix(X)
+        self.r('p <- predict(out, X)')
+        return self.r['p']['x']
+
+    def predict(self, X):
+        self.r['X'] = np.matrix(X)
+        self.r('p <- predict(out, X)')
+        return self.r['p']['class']
 
 
 def slda(X, Y, delta=1e-6, stop=None, Q=None, maxSteps=100,
@@ -302,12 +296,12 @@ def larsen(X, y, delta, stop, Gram, storepath, verbose):
     return b, steps
 
 
-iris = datasets.load_iris()
-X = iris.data
-y = iris.target
-lb = preprocessing.LabelBinarizer()
-Y = lb.fit_transform(y)
+# iris = datasets.load_iris()
+# X = iris.data
+# y = iris.target
+# lb = preprocessing.LabelBinarizer()
+# Y = lb.fit_transform(y)
 
-print X.shape
-print Y.shape
-slda(X, Y)
+# print X.shape
+# print Y.shape
+# slda(X, Y)
