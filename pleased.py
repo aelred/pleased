@@ -145,8 +145,7 @@ def noise_extraction():
     Plot separation using the noise of the signal.
     """
     classifier = Classifier(preproc_min, 
-                            [('noise', NoiseTransform(100)), 
-                             ('features', FeatureEnsembleTransform())], 
+                            [('noise', NoiseTransform(100))], 
                             postproc_standard, svm.SVC())
     classifier.plot('Separation using noise in time-series')
     classifier.plot_lda_scaling(False, 'Significance of noise in time-series')
