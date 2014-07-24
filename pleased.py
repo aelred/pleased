@@ -214,3 +214,15 @@ def sda_separation():
     classifier = Classifier(preproc_min, [], postproc_standard, svm.SVC(), SDA())
     classifier.plot('Separation using SDA')
     classifier.plot_lda_scaling(False, 'Significance of features using SDA scaling')
+
+
+def sda_separation_50():
+    """
+    2014-07-24
+    Plot separation using SDA and only a small number of features.
+    """
+
+    classifier = Classifier(preproc_min, [], postproc_standard, 
+                            svm.SVC(), SDA(num_features=50))
+    classifier.plot('Separation using SDA and 50 features.')
+    classifier.plot_lda_scaling(False, 'Significance of features using SDA scaling')
