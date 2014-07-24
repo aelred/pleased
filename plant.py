@@ -1,7 +1,6 @@
 from collections import namedtuple
 import scipy.io
 import numpy
-import re
 import os
 import csv
 import cPickle
@@ -25,7 +24,7 @@ Stimulus = namedtuple('Stimulus', ['type', 'time'])
 
 # data on a single experiment on a single plant
 # readings is a 2D array where each column relates to an electrode on the plant
-PlantData = namedtuple('PlantData', 
+PlantData = namedtuple('PlantData',
                        ['name', 'readings', 'stimuli', 'sample_freq'])
 
 
@@ -48,7 +47,7 @@ def load_all(path="."):
     plants = []
 
     for root, dirs, files in os.walk(path):
-        if "blk0"  in dirs:
+        if "blk0" in dirs:
             print "Reading %s" % root
             plants += load_txt(root)
 
@@ -97,7 +96,7 @@ def load_txt(path):
             reader = csv.reader(f, delimiter=',')
             next(reader)  # skip header
             for row in reader:
-                stimuli.append(Stimulus(row[0].strip(), 
+                stimuli.append(Stimulus(row[0].strip(),
                                         int(row[2].strip()) + mark_offset))
 
         with file(data, 'r') as f:
@@ -109,7 +108,7 @@ def load_txt(path):
                 # skip empty rows
                 if len(new_data) == 0:
                     continue
-                    
+
                 try:
                     raw_data.append(map(float, new_data))
                     mark_offset += 1
@@ -125,6 +124,7 @@ def load_txt(path):
         fname = os.path.basename(os.path.split(path)[0])
 
     return format_raw(fname, raw_data, stimuli, sample_freq)
+
 
 def load_mat(path):
     """
@@ -162,7 +162,8 @@ def load_mat(path):
 
     fname = os.path.basename(path)
 
-    return format_raw(fname, readings[:,1:], stimuli, sample_freq)
+    return format_raw(fname, readings[:, 1:], stimuli, sample_freq)
+
 
 def format_raw(name, raw_data, raw_stimuli, sample_freq):
     """
@@ -209,6 +210,7 @@ def format_raw(name, raw_data, raw_stimuli, sample_freq):
         plants.append(plant)
 
     return plants
+
 
 def resample(plant_data, new_sample_freq):
     """

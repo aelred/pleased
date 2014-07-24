@@ -21,7 +21,7 @@ if __name__ == "__main__":
     print "Creating plots"
     plot.plant_data_save(plants)
     plot.datapoints_save(X, y)
-    
+
     # plot detrended points
     detrend = learn.DetrendTransform()
     map_detrend = learn.MapElectrodeTransform(detrend.extractor)

@@ -30,12 +30,13 @@ postproc_standard = [
 
 # classifier that extracts features from decimated windows
 feat_class = Classifier(
-    preproc_standard, 
-    extract_decimate_ensemble, 
-    postproc_standard, 
+    preproc_standard,
+    extract_decimate_ensemble,
+    postproc_standard,
     svm.SVC())
 
 min_class = Classifier(preproc_min, [], postproc_standard, svm.SVC())
+
 
 def basic_separator():
     """
@@ -43,6 +44,7 @@ def basic_separator():
     Plot separation of labels with minimal pre-processing of the data.
     """
     min_class.plot('Separation with minimal pre-processing.', False)
+
 
 def basic_separator_validation():
     """
@@ -64,9 +66,9 @@ def null_only_plot():
 
 
 def null_all_plot():
-    """ 
+    """
     2014-07-11
-    Plot separation of null data by experiment as well as non-null data. 
+    Plot separation of null data by experiment as well as non-null data.
     """
     null_class.labels = def_labels
     null_class.plot3d('Separation of null data by experiment type '
@@ -87,7 +89,7 @@ def linear_detrending():
     Plot separation with linear detrending applied to remove experimental bias.
     """
     detrend_class = Classifier(preproc_standard, [], postproc_standard, svm.SVC())
-    detrend_null = NullClassifier(preproc_standard, [], 
+    detrend_null = NullClassifier(preproc_standard, [],
                                   postproc_standard, svm.SVC())
     detrend_class.plot('Separation with linear detrending')
     detrend_null.plot3d('Separation of null data with linear detrending', False)
@@ -99,14 +101,14 @@ def basic_features():
     Plot separation of basic feature extraction methods based on the mean.
     """
     def extract(x):
-        return [mean(x), mean(map(abs, differential(x))), 
+        return [mean(x), mean(map(abs, differential(x))),
                 mean(map(abs, differential(differential(x))))]
-    feature_class = Classifier(preproc_standard, 
-                               [('features', Extractor(extract))], 
+    feature_class = Classifier(preproc_standard,
+                               [('features', Extractor(extract))],
                                postproc_standard, svm.SVC())
     feature_class.plot('Separation using basic features')
     feature_class.plot_lda_scaling(True, 'Significance of basic features',
-        ['mean', 'diff1', 'diff2'])
+                                   ['mean', 'diff1', 'diff2'])
 
 
 def basic_features2():
@@ -115,14 +117,14 @@ def basic_features2():
     Plot separation using another set of basic features based on variance.
     """
     def extract(x):
-        return [var(x), var(differential(x)), 
+        return [var(x), var(differential(x)),
                 var(differential(differential(x)))]
-    feature_class = Classifier(preproc_standard, 
-                               [('features', Extractor(extract))], 
+    feature_class = Classifier(preproc_standard,
+                               [('features', Extractor(extract))],
                                postproc_standard, svm.SVC())
     feature_class.plot('Separation using basic features')
     feature_class.plot_lda_scaling(True, 'Significance of basic features',
-        ['var', 'var(diff1)', 'var(diff2)'])
+                                   ['var', 'var(diff1)', 'var(diff2)'])
 
 
 def feature_ensemble():
@@ -130,13 +132,14 @@ def feature_ensemble():
     2014-07-15
     Plot separation using many features.
     """
-    feature_class = Classifier(preproc_standard, 
-                               [('features', FeatureEnsembleTransform())], 
+    feature_class = Classifier(preproc_standard,
+                               [('features', FeatureEnsembleTransform())],
                                postproc_standard, svm.SVC())
     feature_class.plot('Separation using multiple time-series features')
     feature_class.plot_lda_scaling(True, 'Significance of time-series features',
-        ['mean', 'mean(diff1)', 'mean(diff2)', 'var', 'var(diff1)', 'var(diff2)',
-         'hmob', 'hcom', 'skewness', 'kurtosis'])
+                                   ['mean', 'mean(diff1)', 'mean(diff2)', 'var',
+                                    'var(diff1)', 'var(diff2)',
+                                    'hmob', 'hcom', 'skewness', 'kurtosis'])
 
 
 def noise_extraction():
@@ -144,8 +147,8 @@ def noise_extraction():
     2014-07-15
     Plot separation using the noise of the signal.
     """
-    classifier = Classifier(preproc_min, 
-                            [('noise', NoiseTransform(100))], 
+    classifier = Classifier(preproc_min,
+                            [('noise', NoiseTransform(100))],
                             postproc_standard, svm.SVC())
     classifier.plot('Separation using noise in time-series')
     classifier.plot_lda_scaling(False, 'Significance of noise in time-series')
@@ -156,14 +159,15 @@ def noise_features():
     2014-07-15
     Plot separation using the noise of the signal and the feature ensemble.
     """
-    classifier = Classifier(preproc_min, 
-                            [('noise', NoiseTransform(100)), 
-                             ('features', FeatureEnsembleTransform())], 
+    classifier = Classifier(preproc_min,
+                            [('noise', NoiseTransform(100)),
+                             ('features', FeatureEnsembleTransform())],
                             postproc_standard, svm.SVC())
     classifier.plot('Separation using noise and feature ensemble')
     classifier.plot_lda_scaling(True, 'Significance of features in noise.',
-        ['mean', 'mean(diff1)', 'mean(diff2)', 'var', 'var(diff1)', 'var(diff2)',
-         'hmob', 'hcom', 'skewness', 'kurtosis'])
+                                ['mean', 'mean(diff1)', 'mean(diff2)',
+                                 'var', 'var(diff1)', 'var(diff2)',
+                                 'hmob', 'hcom', 'skewness', 'kurtosis'])
 
 
 def separate_electrodes():
@@ -187,7 +191,7 @@ def separate_electrodes():
         ('concat', ConcatTransform())
     ] + postproc_standard
 
-    classifier = Classifier(preproc_separate, features_separate, 
+    classifier = Classifier(preproc_separate, features_separate,
                             postproc_separate, svm.SVC())
     classifier.plot('Separation using both electrode readings')
 
@@ -200,7 +204,7 @@ def fourier_feature():
 
     features = [('noise', NoiseTransform(100)), ('fourier', FourierTransform())]
 
-    classifier = Classifier(preproc_standard, features, 
+    classifier = Classifier(preproc_standard, features,
                             postproc_standard, svm.SVC())
     classifier.plot('Separation using a Fourier transform')
 
@@ -222,7 +226,7 @@ def sda_separation_50():
     Plot separation using SDA and only a small number of features.
     """
 
-    classifier = Classifier(preproc_min, [], postproc_standard, 
+    classifier = Classifier(preproc_min, [], postproc_standard,
                             svm.SVC(), SDA(num_features=50))
     classifier.plot('Separation using SDA and 50 features.')
     classifier.plot_lda_scaling(False, 'Significance of features using SDA scaling')

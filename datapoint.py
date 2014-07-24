@@ -1,7 +1,5 @@
 import numpy
-import sys
 import csv
-from scipy.optimize import curve_fit
 from itertools import groupby, chain
 import random
 
@@ -15,6 +13,7 @@ window_offset = -600
 
 # min offset of null data from start of readings and first stimuli
 null_offset = 600
+
 
 def generate(plant_data):
     """
@@ -112,6 +111,7 @@ def load(path):
 
     return X, y
 
+
 def filter_types(X, y, types):
     """
     Params:
@@ -119,6 +119,7 @@ def filter_types(X, y, types):
     Returns: All datapoints of the given types.
     """
     return zip(*filter((lambda d: d[1] in types), zip(X, y)))
+
 
 def group_types(X, y):
     """ Returns: The datapoints grouped together by type. """
@@ -129,6 +130,7 @@ def group_types(X, y):
     groups = groupby(sorted(zip(X, y), key=by_type), key=by_type)
     return [(yy, zip(*g)) for yy, g in groups]
 
+
 def sample(X, y, group_size):
     # if class is too small, duplicate data and sample remainder
     # if class is too big, duplicate will be empty, take random sample
@@ -136,15 +138,15 @@ def sample(X, y, group_size):
     sample = random.sample(zip(X, y), group_size % len(X))
     return zip(*(duplicate + sample))
 
+
 def balance(X, y, undersample=True):
     """
     Params:
         undersample:
-            True to reduce the size of common classes, false to 
+            True to reduce the size of common classes, false to
             replicate datapoints in uncommon classes.
     Returns: A subset with the same number of every represented type.
     """
-    
     # find smallest datapoint type to decide how to balance
     all_sizes = [len(list(ys)) for yy, (Xs, ys) in group_types(X, y)]
     if undersample:

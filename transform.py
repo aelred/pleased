@@ -1,8 +1,10 @@
 from sklearn import base
 import numpy as np
+import pywt
 from scipy.stats import linregress
 import datapoint
 from scipy.signal import decimate
+
 
 class Extractor(base.BaseEstimator):
     """ Extracts features from each datapoint. """
@@ -85,7 +87,7 @@ class DecimateWindowTransform(Extractor):
 
     def extractor(self, x):
         results = []
-        
+
         for scale in [2**e for e in range(0, 9)]:
             decimated = DecimateTransform(scale).extractor(x)
             results.append(self.f(decimated))
@@ -132,7 +134,7 @@ class DetrendTransform(Extractor):
     def extractor(self, x):
         # find best fitting line to pre-stimulus window
         times = range(0, len(x))
-        m, c, r, p, err = linregress(times[0:-datapoint.window_offset], 
+        m, c, r, p, err = linregress(times[0:-datapoint.window_offset],
                                      x[0:-datapoint.window_offset])
         # subtract extrapolated line from data to produce new dataset
         return x - self.linear(times, m, c)
@@ -148,7 +150,7 @@ class PostStimulusTransform(Extractor):
 
 
 class PreStimulusTransform(Extractor):
-    """ 
+    """
     Removes any post-stimulus data.
     If the classifier can handle this, it must be infering information from
     the experiment context itself rathern than from the stimulus.
@@ -232,7 +234,7 @@ class FeatureEnsembleTransform(Extractor):
         skew = skewness(x)
         kurt = kurtosis(x)
 
-        return [avg, diff1, diff2, vari, vardiff1, vardiff2, 
+        return [avg, diff1, diff2, vari, vardiff1, vardiff2,
                 hjorth_mob, hjorth_com, skew, kurt]
 
 
