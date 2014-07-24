@@ -23,6 +23,12 @@ def datapoint(xx, yy, stim_line=True):
         plt.axvline(-datap.window_offset)
 
 
+def datapoint_set(XX, yy):
+    fig, axes = plt.subplots(nrows=len(XX), ncols=1)
+    for xx, ax in zip(XX, axes):
+        ax.plot(xx)
+
+
 def show():
     plt.show()
 
@@ -38,9 +44,10 @@ def plant_data_save(plant_list, path="plant_plots"):
         plant_data(p)
         plt.savefig(os.path.join(path, "%s.jpg" % p.name))
         plt.clf()
+        plt.close()
 
 
-def datapoints_save(X, y, path="plots"):
+def datapoints_save(X, y, path="plots", plot_func=datapoint):
     type_count = Counter()
 
     # empty folder in advance
@@ -51,6 +58,7 @@ def datapoints_save(X, y, path="plots"):
 
     for xx, yy in zip(X, y):
         type_count[yy] += 1
-        datapoint(xx, yy)
+        plot_func(xx, yy)
         plt.savefig(os.path.join(path, "%s_%d.png" % (yy, type_count[yy])))
         plt.clf()
+        plt.close()

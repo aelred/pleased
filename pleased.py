@@ -1,6 +1,7 @@
 from learn import *
 from transform import *
 from sda import SDA
+from sklearn import preprocessing, svm
 
 # bare minimum preprocessing to give valid data
 preproc_min = [
@@ -230,3 +231,16 @@ def sda_separation_50():
                             svm.SVC(), SDA(num_features=50))
     classifier.plot('Separation using SDA and 50 features.')
     classifier.plot_lda_scaling(False, 'Significance of features using SDA scaling')
+
+
+def wavelet_separation():
+    """
+    2014-07-24
+    Plot separation using SDA on a wavelet transform.
+    """
+
+    features = [('wavelet', DiscreteWaveletTransform('haar', 11, 0, True))]
+    classifier = Classifier(preproc_standard, features, postproc_standard,
+                            svm.SVC(), SDA(num_features=50))
+    classifier.plot('Separation using SDA on wavelet transform.')
+    classifier.plot_lda_scaling(False, 'Signifiance of wavelet transform features.')

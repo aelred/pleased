@@ -13,6 +13,27 @@ import datapoint
 def_labels = ['null', 'ozone', 'H2SO4']
 
 
+def _scatter(plt_func, axes, X, y, yp, label, mark_tp, mark_fp):
+    groups = datapoint.group_types(zip(X, yp), y)
+
+    # select a rainbow of colours
+    colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups)))))
+    scatters = []
+    for dtype, (Xg, yg) in groups:
+        # extract predicted class
+        Xg, yp = map(np.array, zip(*Xg))
+        tp = (yg == yp)
+        Xtp, Xfp = Xg[tp], Xg[~tp]  # find true and false positives
+        c = next(colors)
+
+        t_label = label + dtype
+        plot_tp = plt_func(axes, Xtp, marker=mark_tp, c=c, label=t_label)
+        plot_fp = plt_func(axes, Xfp, marker=mark_fp, c=c, label=None)
+        scatters.append((plot_tp, plot_fp))
+
+    return scatters
+
+
 class Classifier:
 
     def __init__(self, preproc_pipe, extract_pipe,
@@ -98,45 +119,25 @@ class Classifier:
         plt.ylabel('Significance by LDA')
         plt.show()
 
-    def _scatter(plt_func, axes, X, y, yp, label, mark_tp, mark_fp):
-        groups = datapoint.group_types(zip(X, yp), y)
-
-        # select a rainbow of colours
-        colors = iter(cm.rainbow(np.linspace(0, 1, len(list(groups)))))
-        scatters = []
-        for dtype, (Xg, yg) in groups:
-            # extract predicted class
-            Xg, yp = map(np.array, zip(*Xg))
-            tp = (yg == yp)
-            Xtp, Xfp = Xg[tp], Xg[~tp]  # find true and false positives
-            c = next(colors)
-
-            t_label = label + dtype
-            plot_tp = plt_func(axes, Xtp, marker=mark_tp, c=c, label=t_label)
-            plot_fp = plt_func(axes, Xfp, marker=mark_fp, c=c, label=None)
-            scatters.append((plot_tp, plot_fp))
-
-        return scatters
-
-    def _plot(self, dim, title, fig_func, plt_func, split):
+    def _plot(self, title, fig_func, plt_func, split):
         # transform data by linear discriminant analysis
         if split:
-            Xt, Xv, yt, yv, ypt, ypv = self._run_lda(dim, True)
+            Xt, Xv, yt, yv, ypt, ypv = self._run_lda(True)
             train_label = 'train '
         else:
-            Xt, yt, ypt = self._run_lda(dim, False)
+            Xt, yt, ypt = self._run_lda(False)
             train_label = ''
 
         fig, axes = fig_func()
 
         if split:
-            scatters = self._scatter(plt_func, axes, Xt, yt, ypt,
-                                     train_label, '+', 'x')
-            scatters += self._scatter(plt_func, axes, Xv, yv, ypv,
-                                      'valid ', 'o', 's')
+            scatters = _scatter(plt_func, axes, Xt, yt, ypt,
+                                train_label, '+', 'x')
+            scatters += _scatter(plt_func, axes, Xv, yv, ypv,
+                                 'valid ', 'o', 's')
         else:
-            scatters = self._scatter(plt_func, axes, Xt, yt, ypt,
-                                     train_label, 'o', 's')
+            scatters = _scatter(plt_func, axes, Xt, yt, ypt,
+                                train_label, 'o', 's')
 
         axes.set_xlabel('LDA Basis vector 1')
         axes.set_ylabel('LDA Basis vector 2')
@@ -179,7 +180,7 @@ class Classifier:
     def plot(self, title=None, split=True):
         def plt_func(axes, X, marker, c, label):
             return axes.scatter(X[:, 0], X[:, 1], marker=marker, c=c, label=label)
-        self._plot(2, title, plt.subplots, plt_func, split)
+        self._plot(title, plt.subplots, plt_func, split)
 
     def plot3d(self, title=None, split=True):
         def fig_func():
@@ -195,7 +196,7 @@ class Classifier:
             return axes.scatter(X[:, 0], X[:, 1], X[:, 2],
                                 marker=marker, c=c, label=label)
 
-        self._plot(3, title, fig_func, plt_func, split)
+        self._plot(title, fig_func, plt_func, split)
 
     def score(self):
         # split plant data into training and validation sets

@@ -115,14 +115,19 @@ class FourierTransform(Extractor):
 class DiscreteWaveletTransform(Extractor):
     """ Perform a wavelet transform on the data. """
 
-    def __init__(self, kind, L, D):
+    def __init__(self, kind, L, D, concat=False):
         self.kind = kind
         self.L = L
         self.D = D
+        self.concat = concat
 
     def extractor(self, x):
-        wavelet = pywt.wavedec(x, self.kind, self.L)
-        return np.concatenate(wavelet[0:self.L-self.D])
+        wavelet = pywt.wavedec(x, self.kind, level=self.L)
+        wavelet = wavelet[0:self.L-self.D]
+        if self.concat:
+            return np.concatenate(wavelet)
+        else:
+            return wavelet
 
 
 class DetrendTransform(Extractor):
@@ -138,6 +143,7 @@ class DetrendTransform(Extractor):
                                      x[0:-datapoint.window_offset])
         # subtract extrapolated line from data to produce new dataset
         return x - self.linear(times, m, c)
+
 
 class PostStimulusTransform(Extractor):
     """ Remove any pre-stimulus data from the datapoint. """

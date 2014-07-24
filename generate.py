@@ -1,7 +1,7 @@
 import plant
 import datapoint
 import plot
-import learn
+import transform
 
 # if called from command line, load mat files from data directory
 if __name__ == "__main__":
@@ -23,6 +23,12 @@ if __name__ == "__main__":
     plot.datapoints_save(X, y)
 
     # plot detrended points
-    detrend = learn.DetrendTransform()
-    map_detrend = learn.MapElectrodeTransform(detrend.extractor)
+    detrend = transform.DetrendTransform()
+    map_detrend = transform.MapElectrodeTransform(detrend.extractor)
     plot.datapoints_save(map_detrend.transform(X), y, 'detrend')
+
+    # plot wavelets
+    wavelets = transform.DiscreteWaveletTransform('haar', 11, 0)
+    avg = transform.ElectrodeAvgTransform()
+    plot.datapoints_save(wavelets.transform(avg.transform(X)), y,
+                         'wavelet', plot.datapoint_set)
