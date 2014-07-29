@@ -53,7 +53,7 @@ class SDA:
         print self.r('out <- sda(X, Y, tol=tol, Q=Q, stop=stop, trace=TRUE)')
 
         b = self.r['out']['beta']
-        v = self.r['out']['varIndex']
+        v = [vv-1 for vv in self.r['out']['varIndex']]  # fix off-by-one indexing
         self.scalings_ = np.zeros((n_features, n_components))
         for i, scales in zip(v, b):
             self.scalings_[i] = scales

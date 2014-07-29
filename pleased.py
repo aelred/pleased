@@ -2,6 +2,7 @@ from learn import *
 from transform import *
 from sda import SDA
 from sklearn import preprocessing, svm
+from itertools import chain
 
 # bare minimum preprocessing to give valid data
 preproc_min = [
@@ -179,22 +180,26 @@ def separate_electrodes():
 
     # detrend each electrode individually
     preproc_separate = [
-        ('detrend', MapElectrodeTransform(DetrendTransform().extractor)),
-        ('poststim', MapElectrodeTransform(PostStimulusTransform().extractor)),
+        ('concat', ConcatTransform()),
+        ('detrend', MapTransform(DetrendTransform(), divs=2)),
+        ('poststim', MapTransform(PostStimulusTransform(), divs=2)),
     ]
 
     features_separate = [
-        ('features', MapElectrodeTransform(FeatureEnsembleTransform().extractor))
+        ('features', MapTransform(FeatureEnsembleTransform(), divs=2))
     ]
 
-    # concatenate results together
-    postproc_separate = [
-        ('concat', ConcatTransform())
-    ] + postproc_standard
-
     classifier = Classifier(preproc_separate, features_separate,
-                            postproc_separate, svm.SVC())
+                            postproc_standard, svm.SVC())
     classifier.plot('Separation using both electrode readings')
+    classifier.plot_lda_scaling(True,
+                                'Significance of features across both electrodes.',
+                                ['mean A', 'mean(diff1) A', 'mean(diff2) A',
+                                 'var A', 'var(diff1) A', 'var(diff2) A',
+                                 'hmob A', 'hcom A', 'skewness A', 'kurtosis A',
+                                 'mean B', 'mean(diff1) B', 'mean(diff2) B',
+                                 'var B', 'var(diff1) B', 'var(diff2) B',
+                                 'hmob B', 'hcom B', 'skewness B', 'kurtosis B'])
 
 
 def fourier_feature():
@@ -244,3 +249,22 @@ def wavelet_separation():
                             svm.SVC(), SDA(num_features=50))
     classifier.plot('Separation using SDA on wavelet transform.')
     classifier.plot_lda_scaling(False, 'Signifiance of wavelet transform features.')
+
+
+def wavelet_feature():
+    """
+    2014-07-28
+    Plot separation using LDA on feature ensemble of the wavelet transform.
+    """
+
+    features = [
+        ('wavelet', DiscreteWaveletTransform('haar', 11, 0, True)),
+        ('features', MapTransform(FeatureEnsembleTransform(), divs=12))
+    ]
+    classifier = Classifier(preproc_standard, features,
+                            postproc_standard, svm.SVC(), SDA(num_features=20))
+    classifier.plot('Separation using feature ensemble on wavelet transform.')
+    labels = list(chain(
+        *[[i, '', '', 'v', '', '', 'h', '', '', ''] for i in range(13)]))
+    classifier.plot_lda_scaling(
+        True, 'Significance of wavelet transform features.', labels)

@@ -42,7 +42,26 @@ class ConcatTransform(Extractor):
     """ Reshape multi-dimensional data into one dimension. """
 
     def extractor(self, x):
-        return np.ravel(np.array(x))
+        return np.ravel(np.array(x), 'F')
+
+
+class SplitTransform(Extractor):
+    """ Split data into equal sized parts. """
+
+    def __init__(self, steps=None, divs=None):
+        self.steps = steps
+        self.divs = divs
+
+    def extractor(self, x):
+        steps = self.steps or len(x) / self.divs
+        return np.array([x[i:i+steps] for i in range(0, len(x), steps)]).T
+
+
+class TransposeTransform(Extractor):
+    """ Transpose the data. """
+
+    def extractor(self, x):
+        return x.T
 
 
 class DecimateTransform(Extractor):
@@ -95,14 +114,21 @@ class DecimateWindowTransform(Extractor):
         return np.concatenate(results)
 
 
-class MapElectrodeTransform(Extractor):
-    """ Apply a function to each electrode. """
+class MapTransform(Extractor):
+    """ Apply a function to each part of a feature (e.g. each electrode channel). """
 
-    def __init__(self, f):
-        self.f = f
+    def __init__(self, f, steps=None, divs=None):
+        try:
+            self.f = f.extractor
+        except AttributeError:
+            self.f = f
+
+        self.steps = steps
+        self.divs = divs
 
     def extractor(self, x):
-        return np.array(zip(*[self.f(np.array(xx)) for xx in zip(*x)]))
+        steps = self.steps or len(x) / self.divs
+        return np.ravel([self.f(x[i:i+steps]) for i in range(0, len(x), steps)])
 
 
 class FourierTransform(Extractor):
