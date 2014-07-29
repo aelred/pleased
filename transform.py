@@ -131,6 +131,16 @@ class MapTransform(Extractor):
         return np.ravel([self.f(x[i:i+steps]) for i in range(0, len(x), steps)])
 
 
+class CrossCorrelationTransform(Extractor):
+    """ Calculate cross correlation between two signals. """
+
+    def extractor(self, x):
+        # split in two
+        x1 = x[:len(x)/2]
+        x2 = x[len(x)/2:]
+        return np.correlate(x1, x2, 'full')
+
+
 class FourierTransform(Extractor):
     """ Perform a Fourier transform on the data. """
 

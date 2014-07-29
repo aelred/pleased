@@ -5,6 +5,7 @@ import transform
 
 from sklearn import pipeline
 import numpy as np
+import scipy
 
 # load all plant data in directory
 print "Loading data"
@@ -20,6 +21,7 @@ datapoint.save("data.csv", X, y, sources)
 
 concat = transform.ConcatTransform()
 split = transform.SplitTransform(divs=2)
+detrend = transform.MapTransform(transform.DetrendTransform(), divs=2)
 
 
 def plot_plants():
@@ -32,7 +34,6 @@ def plot_datapoints():
 
 def plot_detrended():
     # plot detrended points
-    detrend = transform.MapTransform(transform.DetrendTransform(), divs=2)
     pipe = pipeline.Pipeline([('c', concat), ('d', detrend), ('s', split)])
     plot.datapoints_save(pipe.transform(X), y, 'detrend')
 
@@ -56,11 +57,31 @@ def plot_derivatives():
         [('c', concat), ('m', mov_avg), ('d', deriv), ('me', mean), ('s', split)])
     plot.datapoints_save(pipe.transform(X), y, 'deriv')
 
+abs_ = transform.Extractor(np.absolute)
+
 
 def plot_derivatives_abs():
     # plot first derivatives absolute value
-    abs_ = transform.Extractor(np.absolute)
     pipe = pipeline.Pipeline(
         [('c', concat), ('m', mov_avg), ('d', deriv),
          ('me', mean), ('a', abs_), ('s', split)])
     plot.datapoints_save(pipe.transform(X), y, 'deriv_abs')
+
+correl = transform.CrossCorrelationTransform()
+window = transform.Extractor(lambda x: x * np.hanning(len(x)))
+
+
+def plot_cross_correlation():
+    # plot cross correlation of electrode channels
+    pipe = pipeline.Pipeline([('c', concat), ('m', mov_avg), ('d', deriv),
+                              ('me', mean), ('cr', correl), ('w', window)])
+    plot_func = lambda xx, yy: plot.datapoint(xx, yy, False)
+    plot.datapoints_save(pipe.transform(X), y, 'correlation', plot_func)
+
+
+def plot_cross_correlation_abs():
+    # plot cross correlation of electrode channels with absolute valued data
+    pipe = pipeline.Pipeline([('c', concat), ('m', mov_avg), ('d', deriv), ('me', mean),
+                              ('a', abs_), ('cr', correl), ('w', window)])
+    plot_func = lambda xx, yy: plot.datapoint(xx, yy, False)
+    plot.datapoints_save(pipe.transform(X), y, 'correlation_abs', plot_func)

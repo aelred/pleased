@@ -254,7 +254,7 @@ def wavelet_separation():
 def wavelet_feature():
     """
     2014-07-28
-    Plot separation using LDA on feature ensemble of the wavelet transform.
+    Plot separation using SDA on feature ensemble of the wavelet transform.
     """
 
     features = [
