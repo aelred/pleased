@@ -17,8 +17,8 @@ preproc_standard = [
     ('poststim', PostStimulus()),
 ]
 
-ensemble = FeatureEnsemble().extractor
-window = Window(ensemble, 3, False).extractor
+ensemble = FeatureEnsemble()
+window = Window(ensemble, 3, False)
 
 # applies feature ensemble to decimated windows
 extract_decimate_ensemble = [

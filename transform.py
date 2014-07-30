@@ -14,17 +14,20 @@ class Extractor(base.BaseEstimator):
             self.extractor = extractor
 
     def transform(self, X):
-        return np.array([self.extractor(x) for x in X], ndmin=2)
+        return np.array([self(x) for x in X], ndmin=2)
 
     def fit(self, X, y):
         return self
+
+    def __call__(self, x):
+        return self.extractor(x)
 
 
 class MeanSubtract(Extractor):
     """ Subtracts the mean of the data from every point. """
 
     def extractor(self, x):
-        m = mean(x)
+        m = Mean()(x)
         return [xx-m for xx in x]
 
 
@@ -108,7 +111,7 @@ class DecimateWindow(Extractor):
         results = []
 
         for scale in [2**e for e in range(0, 9)]:
-            decimated = Decimate(scale).extractor(x)
+            decimated = Decimate(scale)(x)
             results.append(self.f(decimated))
 
         return np.concatenate(results)
@@ -118,11 +121,7 @@ class Map(Extractor):
     """ Apply a function to each part of a feature (e.g. each electrode channel). """
 
     def __init__(self, f, steps=None, divs=None):
-        try:
-            self.f = f.extractor
-        except AttributeError:
-            self.f = f
-
+        self.f = f
         self.steps = steps
         self.divs = divs
 
@@ -254,7 +253,7 @@ class Noise(Extractor):
         self.n = n
 
     def extractor(self, x):
-        smoothed = self.mov_avg.extractor(x)
+        smoothed = self.mov_avg(x)
         return [xx - ss for xx, ss in zip(x[self.n/2:-self.n/2], smoothed)]
 
 
@@ -262,57 +261,79 @@ class FeatureEnsemble(Extractor):
     """ Take an ensemble of different features from the data. """
 
     def extractor(self, x):
-        avg = mean(x)
-        diff1 = mean(map(abs, differential(x)))
-        diff2 = mean(map(abs, differential(differential(x))))
+        avg = Mean(x)
+        diff1 = Mean()(Abs()(Differential()(x)))
+        diff2 = Mean()(Abs()(Differential()(Differential()(x))))
 
-        vari = var(x)
-        vardiff1 = var(differential(x))
-        vardiff2 = var(differential(differential(x)))
+        vari = Var()(x)
+        vardiff1 = Var()(Differential()(x))
+        vardiff2 = Var()(Differential()(Differential()(x)))
 
         hjorth_mob = vardiff1**0.5 / vari**0.5
         hjorth_com = (vardiff2**0.5 / vardiff1**0.5) / hjorth_mob
 
-        skew = skewness(x)
-        kurt = kurtosis(x)
+        skew = Skewness()(x)
+        kurt = Kurtosis()(x)
 
         return [avg, diff1, diff2, vari, vardiff1, vardiff2,
                 hjorth_mob, hjorth_com, skew, kurt]
 
 
-def differential(x):
-    """
-    Returns: The change in x.
-    """
-    return [x2 - x1 for (x1, x2) in zip(x[:-1], x[1:])]
+class Abs(Map):
+    """ Return absolute values. """
+
+    def extractor(self, x):
+        return map(abs, x)
 
 
-def mean(x):
-    """ Returns: The average of x. """
-    return sum(x) / len(x)
+class Differential(Extractor):
+    """ The change in x. """
+
+    def extractor(self, x):
+        return [x2 - x1 for (x1, x2) in zip(x[:-1], x[1:])]
 
 
-def moment(x, n):
-    """ Returns: The nth central moment. """
-    m = mean(x)
-    return sum([(xx-m)**n for xx in x]) / len(x)
+class Mean(Extractor):
+    """ The average of x. """
+
+    def extractor(self, x):
+        return sum(x) / len(x)
 
 
-def var(x):
-    """ Returns: The variance of x. """
-    return moment(x, 2)
+class Moment(Extractor):
+    """ The nth central moment. """
+
+    def __init__(self, n):
+        self.n = n
+
+    def extractor(x, n):
+        m = Mean()(x)
+        return sum([(xx-m)**n for xx in x]) / len(x)
 
 
-def stdev(x):
-    """ Returns: The standard deviation of x. """
-    return var(x)**0.5
+class Var(Moment):
+    """ The variance of x. """
+
+    def __init__(self):
+        Var.__init__(self, 2)
 
 
-def skewness(x):
-    """ Returns: The sample skewness of x. """
-    return moment(x, 3) / (var(x) ** (3/2))
+class Stdev(Extractor):
+    """ The standard deviation of x. """
+
+    def extractor(self, x):
+        return Var()(x)**0.5
 
 
-def kurtosis(x):
-    """ Returns: The sample kurtosis of x. """
-    return moment(x, 4) / (var(x) ** 2) - 3
+class Skewness(Extractor):
+    """ The sample skewness of x. """
+
+    def extractor(self, x):
+        return Moment(3)(x) / (Var()(x) ** (3/2))
+
+
+class Kurtosis(Extractor):
+    """ The sample kurtosis of x. """
+
+    def extractor(self, x):
+        return Moment(4)(x) / (Var()(x) ** 2) - 3
