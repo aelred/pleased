@@ -268,3 +268,69 @@ def wavelet_feature():
         *[[i, '', '', 'v', '', '', 'h', '', '', ''] for i in range(13)]))
     classifier.plot_lda_scaling(
         True, 'Significance of wavelet transform features.', labels)
+
+
+def cross_correlation():
+    """
+    2014-07-30
+    Plot separation using cross-correlation of electrode channels.
+    """
+
+    mov_avg = Map(MovingAvg(100), divs=2)
+    deriv = Map(Differential(), divs=2)
+    mean = Map(MeanSubtract(), divs=2)
+    features = [('m', mov_avg), ('d', deriv), ('me', mean),
+                ('a', Abs()), ('cr', CrossCorrelation())]
+    preproc_separate = [
+        ('concat', Concat()),
+        ('detrend', Map(Detrend(), divs=2)),
+        ('poststim', Map(PostStimulus(), divs=2)),
+    ]
+    classifier = Classifier(preproc_separate, features,
+                            postproc_standard, svm.SVC(), SDA(num_features=50))
+    classifier.plot('Separation using cross-correlation of electrode channels.')
+    classifier.plot_lda_scaling(False, 'Significance of cross-correlation values.')
+
+
+def cross_correlation_windowed():
+    """
+    2014-07-30
+    Plot separation using cross-correlation of electrode channels.
+    """
+
+    mov_avg = Map(MovingAvg(100), divs=2)
+    deriv = Map(Differential(), divs=2)
+    mean = Map(MeanSubtract(), divs=2)
+    window = Extractor(lambda x: x * np.hanning(len(x)))
+    features = [('m', mov_avg), ('d', deriv), ('me', mean),
+                ('a', Abs()), ('cr', CrossCorrelation()), ('w', window)]
+    preproc_separate = [
+        ('concat', Concat()),
+        ('detrend', Map(Detrend(), divs=2)),
+        ('poststim', Map(PostStimulus(), divs=2)),
+    ]
+    classifier = Classifier(preproc_separate, features,
+                            postproc_standard, svm.SVC(), SDA(num_features=50))
+    classifier.plot('Separation using cross-correlation of electrode channels.')
+    classifier.plot_lda_scaling(False, 'Significance of cross-correlation values.')
+
+
+def time_delay():
+    """
+    2014-07-30
+    Plot separation by calculating the time delay between electrode channels.
+    """
+
+    mov_avg = Map(MovingAvg(100), divs=2)
+    deriv = Map(Differential(), divs=2)
+    mean = Map(MeanSubtract(), divs=2)
+    features = [('m', mov_avg), ('d', deriv), ('me', mean),
+                ('a', Abs()), ('t', TimeDelay())]
+    preproc_separate = [
+        ('concat', Concat()),
+        ('detrend', Map(Detrend(), divs=2)),
+        ('poststim', Map(PostStimulus(), divs=2)),
+    ]
+    classifier = Classifier(preproc_separate, features,
+                            postproc_standard, svm.SVC(), lda.LDA())
+    classifier.plot1d('Separation using time delay between electrode channels.')

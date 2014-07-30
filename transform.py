@@ -140,6 +140,16 @@ class CrossCorrelation(Extractor):
         return np.correlate(x1, x2, 'full')
 
 
+class TimeDelay(Extractor):
+    """ Calculate time delay between two equal-length signals. """
+
+    def extractor(self, x):
+        cc = CrossCorrelation()(x)  # get cross correlation
+        window = np.hanning(len(cc))
+        cc *= window  # apply window
+        return [float(cc.argmax() - (len(cc) / 2))]  # find maximum index
+
+
 class Fourier(Extractor):
     """ Perform a Fourier transform on the data. """
 
@@ -279,7 +289,7 @@ class FeatureEnsemble(Extractor):
                 hjorth_mob, hjorth_com, skew, kurt]
 
 
-class Abs(Map):
+class Abs(Extractor):
     """ Return absolute values. """
 
     def extractor(self, x):

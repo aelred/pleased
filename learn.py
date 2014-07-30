@@ -198,6 +198,11 @@ class Classifier:
 
         self._plot(title, fig_func, plt_func, split)
 
+    def plot1d(self, title=None, split=True):
+        def plt_func(axes, X, marker, c, label):
+            return axes.scatter(X[:, 0], X[:, 0], marker=marker, c=c, label=label)
+        self._plot(title, plt.subplots, plt_func, split)
+
     def score(self):
         # split plant data into training and validation sets
         X_train, X_valid, y_train, y_valid, st, sv = self._split_data()

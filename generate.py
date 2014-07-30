@@ -57,7 +57,7 @@ def plot_derivatives():
         [('c', concat), ('m', mov_avg), ('d', deriv), ('me', mean), ('s', split)])
     plot.datapoints_save(pipe.transform(X), y, 'deriv')
 
-abs_ = transform.Extractor(np.absolute)
+abs_ = transform.Abs()
 
 
 def plot_derivatives_abs():
