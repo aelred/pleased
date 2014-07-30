@@ -6,23 +6,23 @@ from itertools import chain
 
 # bare minimum preprocessing to give valid data
 preproc_min = [
-    ('avg', ElectrodeAvgTransform()),
-    ('poststim', PostStimulusTransform())
+    ('avg', ElectrodeAvg()),
+    ('poststim', PostStimulus())
 ]
 
 # averages electrodes and detrends data
 preproc_standard = [
-    ('avg', ElectrodeAvgTransform()),
-    ('detrend', DetrendTransform()),
-    ('poststim', PostStimulusTransform()),
+    ('avg', ElectrodeAvg()),
+    ('detrend', Detrend()),
+    ('poststim', PostStimulus()),
 ]
 
-ensemble = FeatureEnsembleTransform().extractor
-window = WindowTransform(ensemble, 3, False).extractor
+ensemble = FeatureEnsemble().extractor
+window = Window(ensemble, 3, False).extractor
 
 # applies feature ensemble to decimated windows
 extract_decimate_ensemble = [
-    ('feature', DecimateWindowTransform(window)),
+    ('feature', DecimateWindow(window)),
 ]
 
 # normalizes data
@@ -135,7 +135,7 @@ def feature_ensemble():
     Plot separation using many features.
     """
     feature_class = Classifier(preproc_standard,
-                               [('features', FeatureEnsembleTransform())],
+                               [('features', FeatureEnsemble())],
                                postproc_standard, svm.SVC())
     feature_class.plot('Separation using multiple time-series features')
     feature_class.plot_lda_scaling(True, 'Significance of time-series features',
@@ -150,7 +150,7 @@ def noise_extraction():
     Plot separation using the noise of the signal.
     """
     classifier = Classifier(preproc_min,
-                            [('noise', NoiseTransform(100))],
+                            [('noise', Noise(100))],
                             postproc_standard, svm.SVC())
     classifier.plot('Separation using noise in time-series')
     classifier.plot_lda_scaling(False, 'Significance of noise in time-series')
@@ -162,8 +162,8 @@ def noise_features():
     Plot separation using the noise of the signal and the feature ensemble.
     """
     classifier = Classifier(preproc_min,
-                            [('noise', NoiseTransform(100)),
-                             ('features', FeatureEnsembleTransform())],
+                            [('noise', Noise(100)),
+                             ('features', FeatureEnsemble())],
                             postproc_standard, svm.SVC())
     classifier.plot('Separation using noise and feature ensemble')
     classifier.plot_lda_scaling(True, 'Significance of features in noise.',
@@ -180,13 +180,13 @@ def separate_electrodes():
 
     # detrend each electrode individually
     preproc_separate = [
-        ('concat', ConcatTransform()),
-        ('detrend', MapTransform(DetrendTransform(), divs=2)),
-        ('poststim', MapTransform(PostStimulusTransform(), divs=2)),
+        ('concat', Concat()),
+        ('detrend', Map(Detrend(), divs=2)),
+        ('poststim', Map(PostStimulus(), divs=2)),
     ]
 
     features_separate = [
-        ('features', MapTransform(FeatureEnsembleTransform(), divs=2))
+        ('features', Map(FeatureEnsemble(), divs=2))
     ]
 
     classifier = Classifier(preproc_separate, features_separate,
@@ -208,7 +208,7 @@ def fourier_feature():
     Plot separation using a Fourier transform of the signal.
     """
 
-    features = [('noise', NoiseTransform(100)), ('fourier', FourierTransform())]
+    features = [('noise', Noise(100)), ('fourier', Fourier())]
 
     classifier = Classifier(preproc_standard, features,
                             postproc_standard, svm.SVC())
@@ -244,7 +244,7 @@ def wavelet_separation():
     Plot separation using SDA on a wavelet transform.
     """
 
-    features = [('wavelet', DiscreteWaveletTransform('haar', 11, 0, True))]
+    features = [('wavelet', DiscreteWavelet('haar', 11, 0, True))]
     classifier = Classifier(preproc_standard, features, postproc_standard,
                             svm.SVC(), SDA(num_features=50))
     classifier.plot('Separation using SDA on wavelet transform.')
@@ -258,8 +258,8 @@ def wavelet_feature():
     """
 
     features = [
-        ('wavelet', DiscreteWaveletTransform('haar', 11, 0, True)),
-        ('features', MapTransform(FeatureEnsembleTransform(), divs=12))
+        ('wavelet', DiscreteWavelet('haar', 11, 0, True)),
+        ('features', Map(FeatureEnsemble(), divs=12))
     ]
     classifier = Classifier(preproc_standard, features,
                             postproc_standard, svm.SVC(), SDA(num_features=20))

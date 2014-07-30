@@ -19,9 +19,9 @@ X, y, sources = datapoint.generate_all(plants)
 print "Writing to data.csv"
 datapoint.save("data.csv", X, y, sources)
 
-concat = transform.ConcatTransform()
-split = transform.SplitTransform(divs=2)
-detrend = transform.MapTransform(transform.DetrendTransform(), divs=2)
+concat = transform.Concat()
+split = transform.Split(divs=2)
+detrend = transform.Map(transform.Detrend(), divs=2)
 
 
 def plot_plants():
@@ -40,15 +40,15 @@ def plot_detrended():
 
 def plot_wavelets():
     # plot wavelets
-    wavelets = transform.DiscreteWaveletTransform('haar', 11, 0)
-    avg = transform.ElectrodeAvgTransform()
+    wavelets = transform.DiscreteWavelet('haar', 11, 0)
+    avg = transform.ElectrodeAvg()
     plot.datapoints_save(wavelets.transform(avg.transform(X)), y,
                          'wavelet', plot.datapoint_set)
 
 
-mov_avg = transform.MapTransform(transform.MovingAvgTransform(100), divs=2)
-deriv = transform.MapTransform(transform.differential, divs=2)
-mean = transform.MapTransform(transform.MeanSubtractTransform(), divs=2)
+mov_avg = transform.Map(transform.MovingAvg(100), divs=2)
+deriv = transform.Map(transform.differential, divs=2)
+mean = transform.Map(transform.MeanSubtract(), divs=2)
 
 
 def plot_derivatives():
@@ -67,7 +67,7 @@ def plot_derivatives_abs():
          ('me', mean), ('a', abs_), ('s', split)])
     plot.datapoints_save(pipe.transform(X), y, 'deriv_abs')
 
-correl = transform.CrossCorrelationTransform()
+correl = transform.CrossCorrelation()
 window = transform.Extractor(lambda x: x * np.hanning(len(x)))
 
 

@@ -20,7 +20,7 @@ class Extractor(base.BaseEstimator):
         return self
 
 
-class MeanSubtractTransform(Extractor):
+class MeanSubtract(Extractor):
     """ Subtracts the mean of the data from every point. """
 
     def extractor(self, x):
@@ -28,7 +28,7 @@ class MeanSubtractTransform(Extractor):
         return [xx-m for xx in x]
 
 
-class ClipTransform(Extractor):
+class Clip(Extractor):
     """ Cut some amount from the end of the data. """
 
     def __init__(self, size):
@@ -38,14 +38,14 @@ class ClipTransform(Extractor):
         return x[0:int(len(x)*self.size)]
 
 
-class ConcatTransform(Extractor):
+class Concat(Extractor):
     """ Reshape multi-dimensional data into one dimension. """
 
     def extractor(self, x):
         return np.ravel(np.array(x), 'F')
 
 
-class SplitTransform(Extractor):
+class Split(Extractor):
     """ Split data into equal sized parts. """
 
     def __init__(self, steps=None, divs=None):
@@ -57,14 +57,14 @@ class SplitTransform(Extractor):
         return np.array([x[i:i+steps] for i in range(0, len(x), steps)]).T
 
 
-class TransposeTransform(Extractor):
+class Transpose(Extractor):
     """ Transpose the data. """
 
     def extractor(self, x):
         return x.T
 
 
-class DecimateTransform(Extractor):
+class Decimate(Extractor):
     """ Shrink signal by applying a low-pass filter. """
 
     def __init__(self, factor):
@@ -76,7 +76,7 @@ class DecimateTransform(Extractor):
         return decimate(x, self.factor, ftype='fir')
 
 
-class WindowTransform(Extractor):
+class Window(Extractor):
     """ Apply a function to overlapping windows. """
 
     def __init__(self, f, N, hanning=True):
@@ -98,7 +98,7 @@ class WindowTransform(Extractor):
         return np.concatenate(windows)
 
 
-class DecimateWindowTransform(Extractor):
+class DecimateWindow(Extractor):
     """ Decimate the data at different scales and apply a function to each. """
 
     def __init__(self, f):
@@ -108,13 +108,13 @@ class DecimateWindowTransform(Extractor):
         results = []
 
         for scale in [2**e for e in range(0, 9)]:
-            decimated = DecimateTransform(scale).extractor(x)
+            decimated = Decimate(scale).extractor(x)
             results.append(self.f(decimated))
 
         return np.concatenate(results)
 
 
-class MapTransform(Extractor):
+class Map(Extractor):
     """ Apply a function to each part of a feature (e.g. each electrode channel). """
 
     def __init__(self, f, steps=None, divs=None):
@@ -131,7 +131,7 @@ class MapTransform(Extractor):
         return np.ravel([self.f(x[i:i+steps]) for i in range(0, len(x), steps)])
 
 
-class CrossCorrelationTransform(Extractor):
+class CrossCorrelation(Extractor):
     """ Calculate cross correlation between two signals. """
 
     def extractor(self, x):
@@ -141,14 +141,14 @@ class CrossCorrelationTransform(Extractor):
         return np.correlate(x1, x2, 'full')
 
 
-class FourierTransform(Extractor):
+class Fourier(Extractor):
     """ Perform a Fourier transform on the data. """
 
     def extractor(self, x):
         return np.fft.rfft(x)
 
 
-class DiscreteWaveletTransform(Extractor):
+class DiscreteWavelet(Extractor):
     """ Perform a wavelet transform on the data. """
 
     def __init__(self, kind, L, D, concat=False):
@@ -166,7 +166,7 @@ class DiscreteWaveletTransform(Extractor):
             return wavelet
 
 
-class DetrendTransform(Extractor):
+class Detrend(Extractor):
     """ Remove any linear trends in the data. """
 
     def linear(self, xs, m, c):
@@ -181,7 +181,7 @@ class DetrendTransform(Extractor):
         return x - self.linear(times, m, c)
 
 
-class PostStimulusTransform(Extractor):
+class PostStimulus(Extractor):
     """ Remove any pre-stimulus data from the datapoint. """
 
     def __init__(self, offset=0):
@@ -191,7 +191,7 @@ class PostStimulusTransform(Extractor):
         return x[self.offset-datapoint.window_offset:]
 
 
-class PreStimulusTransform(Extractor):
+class PreStimulus(Extractor):
     """
     Removes any post-stimulus data.
     If the classifier can handle this, it must be infering information from
@@ -202,21 +202,21 @@ class PreStimulusTransform(Extractor):
         return x[0:-datapoint.window_offset]
 
 
-class ElectrodeAvgTransform(Extractor):
+class ElectrodeAvg(Extractor):
     """ Take the average of the two electrode values. """
 
     def extractor(self, x):
         return [(xx[0] + xx[1]) / 2.0 for xx in x]
 
 
-class ElectrodeDiffTransform(Extractor):
+class ElectrodeDiff(Extractor):
     """ Take the difference of the two electrode values. """
 
     def extractor(self, x):
         return [xx[0] - xx[1] for xx in x]
 
 
-class MovingAvgTransform(Extractor):
+class MovingAvg(Extractor):
     """ Take a moving average of time series data. """
 
     def __init__(self, n):
@@ -246,11 +246,11 @@ class MovingAvgTransform(Extractor):
         return mov_avg
 
 
-class NoiseTransform(Extractor):
+class Noise(Extractor):
     """ Extract noise from data. """
 
     def __init__(self, n):
-        self.mov_avg = MovingAvgTransform(n)
+        self.mov_avg = MovingAvg(n)
         self.n = n
 
     def extractor(self, x):
@@ -258,7 +258,7 @@ class NoiseTransform(Extractor):
         return [xx - ss for xx, ss in zip(x[self.n/2:-self.n/2], smoothed)]
 
 
-class FeatureEnsembleTransform(Extractor):
+class FeatureEnsemble(Extractor):
     """ Take an ensemble of different features from the data. """
 
     def extractor(self, x):
