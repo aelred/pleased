@@ -334,3 +334,71 @@ def time_delay():
     classifier = Classifier(preproc_separate, features,
                             postproc_standard, svm.SVC(), lda.LDA())
     classifier.plot1d('Separation using time delay between electrode channels.')
+
+
+def cross_correlation_ensemble():
+    """
+    2014-07-30
+    Plot separation by calculating the feature ensemble on cross-correlation data.
+    """
+
+    mov_avg = Map(MovingAvg(100), divs=2)
+    deriv = Map(Differential(), divs=2)
+    mean = Map(MeanSubtract(), divs=2)
+    features = [('m', mov_avg), ('d', deriv), ('me', mean),
+                ('a', Abs()), ('cr', CrossCorrelation()), ('f', FeatureEnsemble())]
+    preproc_separate = [
+        ('concat', Concat()),
+        ('detrend', Map(Detrend(), divs=2)),
+        ('poststim', Map(PostStimulus(), divs=2)),
+    ]
+    classifier = Classifier(preproc_separate, features,
+                            postproc_standard, svm.SVC(), lda.LDA())
+    classifier.plot('Separation using features of cross-correlation.')
+    classifier.plot_lda_scaling(True, 'Significance of cross-correlation features.',
+                                ['mean', 'mean(diff1)', 'mean(diff2)',
+                                 'var', 'var(diff1)', 'var(diff2)',
+                                 'hmob', 'hcom', 'skewness', 'kurtosis'])
+
+
+def multiple_ensembles():
+    """
+    2014-07-30
+    Plot separation using combinations of feature ensembles from:
+        1. The averaged electrode data
+        2. The noise (subtracting a moving average)
+        3. The wavelet transform
+        4. The cross-correlation
+    """
+
+    pre = [('concat', Concat()),
+           ('detrend', Map(Detrend(), divs=2)),
+           ('post', Map(PostStimulus(), divs=2))]
+
+    feature = ('feature', FeatureEnsemble())
+    avg = ('avg', ElectrodeAvg())
+
+    avg_feat = pipeline.Pipeline([avg, feature])
+    noise = pipeline.Pipeline([avg, ('noise', Noise(100)), feature])
+    wavelet = pipeline.Pipeline(
+        [avg, ('wavelet', DiscreteWavelet('haar', 11, 0, True)),
+         ('feature', Map(FeatureEnsemble(), divs=12))])
+
+    mov_avg = Map(MovingAvg(100), divs=2)
+    deriv = Map(Differential(), divs=2)
+    mean = Map(MeanSubtract(), divs=2)
+    cross = pipeline.Pipeline([('m', mov_avg), ('d', deriv), ('me', mean),
+                               ('a', Abs()), ('cr', CrossCorrelation()), feature])
+
+    union = pipeline.FeatureUnion([('a', avg_feat), ('n', noise),
+                                   ('w', wavelet), ('c', cross)])
+    classifier = Classifier(pre, [('union', union)], postproc_standard,
+                            svm.SVC(), SDA(num_features=50))
+    classifier.plot('Separation using multiple feature ensembles.')
+
+    lab_f = lambda name: [name, '', '', 'v', '', '', 'h', '', '', '']
+    labels = lab_f('a') + lab_f('n') + (
+        list(chain(*[lab_f('w%d' % i) for i in range(13)]))) + lab_f('c')
+
+    classifier.plot_lda_scaling(True, 'Significance of multiple feature ensembles.',
+                                labels)

@@ -215,7 +215,12 @@ class ElectrodeAvg(Extractor):
     """ Take the average of the two electrode values. """
 
     def extractor(self, x):
-        return [(xx[0] + xx[1]) / 2.0 for xx in x]
+        try:
+            return [(xx[0] + xx[1]) / 2.0 for xx in x]
+        except IndexError:
+            # if data is concatenated
+            x = x.reshape((-1, 2))
+            return self.extractor(x)
 
 
 class ElectrodeDiff(Extractor):
@@ -271,13 +276,18 @@ class FeatureEnsemble(Extractor):
     """ Take an ensemble of different features from the data. """
 
     def extractor(self, x):
-        avg = Mean(x)
-        diff1 = Mean()(Abs()(Differential()(x)))
-        diff2 = Mean()(Abs()(Differential()(Differential()(x))))
+        m = Mean()
+        v = Var()
+        a = Abs()
+        d = Differential()
 
-        vari = Var()(x)
-        vardiff1 = Var()(Differential()(x))
-        vardiff2 = Var()(Differential()(Differential()(x)))
+        avg = m(x)
+        diff1 = m(a(d(x)))
+        diff2 = m(a(d(d(x))))
+
+        vari = v(x)
+        vardiff1 = v(d(x))
+        vardiff2 = v(d(d(x)))
 
         hjorth_mob = vardiff1**0.5 / vari**0.5
         hjorth_com = (vardiff2**0.5 / vardiff1**0.5) / hjorth_mob
@@ -316,16 +326,16 @@ class Moment(Extractor):
     def __init__(self, n):
         self.n = n
 
-    def extractor(x, n):
+    def extractor(self, x):
         m = Mean()(x)
-        return sum([(xx-m)**n for xx in x]) / len(x)
+        return sum([(xx-m)**self.n for xx in x]) / len(x)
 
 
 class Var(Moment):
     """ The variance of x. """
 
     def __init__(self):
-        Var.__init__(self, 2)
+        Moment.__init__(self, 2)
 
 
 class Stdev(Extractor):
