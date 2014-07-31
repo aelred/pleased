@@ -402,3 +402,27 @@ def multiple_ensembles():
 
     classifier.plot_lda_scaling(True, 'Significance of multiple feature ensembles.',
                                 labels)
+
+
+def null_separation_validation():
+    """
+    2014-07-31
+    Plot separation of null data using a validation set.
+    """
+    null_class.labels = def_labels
+    null_class.plot3d('Separation of null data by experiment type '
+                      'and stimuli by stimulus type')
+    null_class.plot_lda_scaling(False, 'Significance of null separation features.')
+
+
+def wavelet_null_separation():
+    """
+    2014-07-31
+    Plot separation of null data using SDA on a wavelet transform.
+    """
+
+    features = [('wavelet', DiscreteWavelet('haar', 11, 0, True))]
+    classifier = NullClassifier(preproc_standard, features, postproc_standard,
+                                svm.SVC(), SDA(num_features=50))
+    classifier.plot3d('Null separation using SDA on wavelet transform.')
+    classifier.plot_lda_scaling(False, 'Signifiance of wavelet transform features.')

@@ -6,6 +6,7 @@ import transform
 from sklearn import pipeline
 import numpy as np
 import scipy
+import matplotlib.pyplot as plt
 
 # load all plant data in directory
 print "Loading data"
@@ -47,7 +48,7 @@ def plot_wavelets():
 
 
 mov_avg = transform.Map(transform.MovingAvg(100), divs=2)
-deriv = transform.Map(transform.differential, divs=2)
+deriv = transform.Map(transform.Differential(), divs=2)
 mean = transform.Map(transform.MeanSubtract(), divs=2)
 
 
@@ -67,6 +68,15 @@ def plot_derivatives_abs():
          ('me', mean), ('a', abs_), ('s', split)])
     plot.datapoints_save(pipe.transform(X), y, 'deriv_abs')
 
+
+def plot_derivatives_diff():
+    # plot first derivatives differences
+    pipe = pipeline.Pipeline(
+        [('c', concat), ('m', mov_avg), ('d', deriv),
+         ('me', mean), ('a', abs_), ('s', split),
+         ('e', transform.ElectrodeDiff())])
+    plot.datapoints_save(pipe.transform(X), y, 'deriv_diff')
+
 correl = transform.CrossCorrelation()
 window = transform.Extractor(lambda x: x * np.hanning(len(x)))
 
@@ -85,3 +95,17 @@ def plot_cross_correlation_abs():
                               ('a', abs_), ('cr', correl), ('w', window)])
     plot_func = lambda xx, yy: plot.datapoint(xx, yy, False)
     plot.datapoints_save(pipe.transform(X), y, 'correlation_abs', plot_func)
+
+
+def plot_fourier():
+    # plot fourier transform
+    pipe = pipeline.Pipeline(
+        [('c', concat), ('p', transform.PostStimulus()),
+         ('w', transform.Map(window, divs=2)),
+         ('f', transform.Map(transform.Fourier(), divs=2)),
+         ('s', split)])
+
+    def plot_func(xx, yy):
+        plt.yscale('log')
+        plot.datapoint(xx, yy, False)
+    plot.datapoints_save(pipe.transform(X), y, 'fourier', plot_func)

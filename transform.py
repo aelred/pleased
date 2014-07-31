@@ -227,7 +227,12 @@ class ElectrodeDiff(Extractor):
     """ Take the difference of the two electrode values. """
 
     def extractor(self, x):
-        return [xx[0] - xx[1] for xx in x]
+        try:
+            return [xx[0] - xx[1] for xx in x]
+        except IndexError:
+            # if data is concatenated
+            x = x.reshape((-1, 2))
+            return self.extractor(x)
 
 
 class MovingAvg(Extractor):
