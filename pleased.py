@@ -3,6 +3,7 @@ from transform import *
 from sda import SDA
 from sklearn import preprocessing, svm
 from itertools import chain
+import scipy
 
 # bare minimum preprocessing to give valid data
 preproc_min = [
@@ -15,6 +16,13 @@ preproc_standard = [
     ('avg', ElectrodeAvg()),
     ('detrend', Detrend()),
     ('poststim', PostStimulus()),
+]
+
+# detrend each electrode separately
+preproc_separate = [
+    ('concat', Concat()),
+    ('detrend', Map(Detrend(), divs=2)),
+    ('poststim', Map(PostStimulus(), divs=2)),
 ]
 
 ensemble = FeatureEnsemble()
@@ -177,14 +185,6 @@ def separate_electrodes():
     2014-07-16
     Plot separation when operations are performed on each electrode separately.
     """
-
-    # detrend each electrode individually
-    preproc_separate = [
-        ('concat', Concat()),
-        ('detrend', Map(Detrend(), divs=2)),
-        ('poststim', Map(PostStimulus(), divs=2)),
-    ]
-
     features_separate = [
         ('features', Map(FeatureEnsemble(), divs=2))
     ]
@@ -281,11 +281,6 @@ def cross_correlation():
     mean = Map(MeanSubtract(), divs=2)
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('cr', CrossCorrelation())]
-    preproc_separate = [
-        ('concat', Concat()),
-        ('detrend', Map(Detrend(), divs=2)),
-        ('poststim', Map(PostStimulus(), divs=2)),
-    ]
     classifier = Classifier(preproc_separate, features,
                             postproc_standard, svm.SVC(), SDA(num_features=50))
     classifier.plot('Separation using cross-correlation of electrode channels.')
@@ -304,11 +299,6 @@ def cross_correlation_windowed():
     window = Extractor(lambda x: x * np.hanning(len(x)))
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('cr', CrossCorrelation()), ('w', window)]
-    preproc_separate = [
-        ('concat', Concat()),
-        ('detrend', Map(Detrend(), divs=2)),
-        ('poststim', Map(PostStimulus(), divs=2)),
-    ]
     classifier = Classifier(preproc_separate, features,
                             postproc_standard, svm.SVC(), SDA(num_features=50))
     classifier.plot('Separation using cross-correlation of electrode channels.')
@@ -326,11 +316,6 @@ def time_delay():
     mean = Map(MeanSubtract(), divs=2)
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('t', TimeDelay())]
-    preproc_separate = [
-        ('concat', Concat()),
-        ('detrend', Map(Detrend(), divs=2)),
-        ('poststim', Map(PostStimulus(), divs=2)),
-    ]
     classifier = Classifier(preproc_separate, features,
                             postproc_standard, svm.SVC(), lda.LDA())
     classifier.plot1d('Separation using time delay between electrode channels.')
@@ -347,11 +332,6 @@ def cross_correlation_ensemble():
     mean = Map(MeanSubtract(), divs=2)
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('cr', CrossCorrelation()), ('f', FeatureEnsemble())]
-    preproc_separate = [
-        ('concat', Concat()),
-        ('detrend', Map(Detrend(), divs=2)),
-        ('poststim', Map(PostStimulus(), divs=2)),
-    ]
     classifier = Classifier(preproc_separate, features,
                             postproc_standard, svm.SVC(), lda.LDA())
     classifier.plot('Separation using features of cross-correlation.')
@@ -426,3 +406,56 @@ def wavelet_null_separation():
                                 svm.SVC(), SDA(num_features=50))
     classifier.plot3d('Null separation using SDA on wavelet transform.')
     classifier.plot_lda_scaling(False, 'Signifiance of wavelet transform features.')
+
+
+def noise_correlation_separation():
+    """
+    2014-08-01
+    Plot separation using cross-correlation of the derivative of the noise.
+    """
+    mov_avg = Map(MovingAvg(100), divs=2)
+    deriv = Map(Differential(), divs=2)
+    mean = Map(MeanSubtract(), divs=2)
+    classifier = Classifier(preproc_separate,
+                            [('n', Map(Noise(100), divs=2)),
+                             ('m', mov_avg), ('d', deriv), ('me', mean),
+                             ('a', Abs()), ('c', CrossCorrelation()),
+                             ('f', FeatureEnsemble())],
+                            postproc_standard, svm.SVC())
+    classifier.plot('Separation using cross-correlation of noise derivative.')
+    classifier.plot_lda_scaling(True, 'Significance of cross-correlation of noise',
+                                ['mean', 'mean(diff1)', 'mean(diff2)',
+                                 'var', 'var(diff1)', 'var(diff2)',
+                                 'hmob', 'hcom', 'skewness', 'kurtosis'])
+
+
+def histogram_ben_separation():
+    """
+    2014-08-01
+    Plot separation of Ben's wavelet histogram data from Matlab.
+    """
+    mat = scipy.io.loadmat('ben.mat')
+    X = mat['dwtFeats']
+    y = mat['classes'].ravel()
+    classifier = Classifier([], [], postproc_standard, svm.SVC())
+
+    def get_data(_=None):
+        return (X, y, y)
+    classifier.get_data = get_data
+    classifier.plot1d('Separation using Ben\'s histograms.')
+    classifier.plot_lda_scaling(False, 'Significance of histogram features.')
+
+
+def histogram_my_separation():
+    """
+    2014-08-01
+    Attempt to emulate Ben's results above.
+    """
+    features = [
+        ('wavelet', DiscreteWavelet('haar', 15, 0, True)),
+        ('histogram', Map(Histogram(10), divs=16))
+    ]
+    classifier = Classifier(preproc_min, features, postproc_standard, svm.SVC())
+    classifier.labels = ['null', 'ozone']
+    classifier.plot1d('Separation using histogram of wavelets.')
+    classifier.plot_lda_scaling(False, 'Significance of histogram features.')

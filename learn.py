@@ -23,11 +23,13 @@ def _scatter(plt_func, axes, X, y, yp, label, mark_tp, mark_fp):
     for dtype, (Xg, yg) in groups:
         # extract predicted class
         Xg, yp = map(np.array, zip(*Xg))
-        tp = (yg == yp)
+        yp = np.array(map(str, yp))
+        yg = np.array(map(str, yg))
+        tp = yg == yp
         Xtp, Xfp = Xg[tp], Xg[~tp]  # find true and false positives
         c = next(colors)
 
-        t_label = label + dtype
+        t_label = label + str(dtype)
         plot_tp = plt_func(axes, Xtp, marker=mark_tp, c=c, label=t_label)
         plot_fp = plt_func(axes, Xfp, marker=mark_fp, c=c, label=None)
         scatters.append((plot_tp, plot_fp))

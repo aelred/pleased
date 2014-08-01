@@ -40,6 +40,11 @@ class SDA:
         lb = preprocessing.LabelBinarizer()
         Y = lb.fit_transform(y)
 
+        # fix binarizer to work for two-class problems
+        if n_classes == 2:
+            convert = {(0,): [1, 0], (1,): [0, 1]}
+            Y = np.array([convert[tuple(yy)] for yy in Y])
+
         # Enter into SDA function
         self.r['X'] = np.matrix(X)
         self.r['Y'] = np.matrix(Y)

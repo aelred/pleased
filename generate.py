@@ -109,3 +109,19 @@ def plot_fourier():
         plt.yscale('log')
         plot.datapoint(xx, yy, False)
     plot.datapoints_save(pipe.transform(X), y, 'fourier', plot_func)
+
+
+noise = transform.Map(transform.Noise(100), divs=2)
+
+
+def plot_noise():
+    pipe = pipeline.Pipeline([('c', concat), ('n', noise), ('s', split)])
+    plot.datapoints_save(pipe.transform(X), y, 'noise')
+
+
+def plot_noise_correlation():
+    pipe = pipeline.Pipeline(
+        [('c', concat), ('n', noise), ('m', mov_avg), ('d', deriv), ('me', mean),
+         ('a', abs_), ('cr', correl)])
+    plot_func = lambda xx, yy: plot.datapoint(xx, yy, False)
+    plot.datapoints_save(pipe.transform(X), y, 'noise_correlation', plot_func)

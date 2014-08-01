@@ -101,6 +101,19 @@ class Window(Extractor):
         return np.concatenate(windows)
 
 
+class Histogram(Extractor):
+    """ Take a histogram of data. """
+
+    def __init__(self, num_bins):
+        self.num_bins = num_bins
+
+    def fit(self, X, y):
+        pass
+
+    def extractor(self, x):
+        return np.histogram(x, self.num_bins)[0]
+
+
 class DecimateWindow(Extractor):
     """ Decimate the data at different scales and apply a function to each. """
 
