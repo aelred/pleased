@@ -244,7 +244,7 @@ def wavelet_separation():
     Plot separation using SDA on a wavelet transform.
     """
 
-    features = [('wavelet', DiscreteWavelet('haar', 11, 0, True))]
+    features = [('wavelet', DiscreteWavelet('haar', 16, 0, True))]
     classifier = Classifier(preproc_standard, features, postproc_standard,
                             svm.SVC(), SDA(num_features=50))
     classifier.plot('Separation using SDA on wavelet transform.')
@@ -258,8 +258,7 @@ def wavelet_feature():
     """
 
     features = [
-        ('wavelet', DiscreteWavelet('haar', 11, 0, True)),
-        ('features', Map(FeatureEnsemble(), divs=12))
+        ('wavelet', DiscreteWavelet('haar', 16, 0, True, [FeatureEnsemble()] * 16)),
     ]
     classifier = Classifier(preproc_standard, features,
                             postproc_standard, svm.SVC(), SDA(num_features=20))
@@ -361,8 +360,9 @@ def multiple_ensembles():
     avg_feat = pipeline.Pipeline([avg, feature])
     noise = pipeline.Pipeline([avg, ('noise', Noise(100)), feature])
     wavelet = pipeline.Pipeline(
-        [avg, ('wavelet', DiscreteWavelet('haar', 11, 0, True)),
-         ('feature', Map(FeatureEnsemble(), divs=12))])
+        [avg,
+         ('wavelet', DiscreteWavelet('haar', 16, 0, True, [FeatureEnsemble()] * 16))
+         ])
 
     mov_avg = Map(MovingAvg(100), divs=2)
     deriv = Map(Differential(), divs=2)
@@ -451,11 +451,14 @@ def histogram_my_separation():
     2014-08-01
     Attempt to emulate Ben's results above.
     """
+    num_levels = 16
+    drop_levels = 4
+    histograms = [Histogram(5) for x in range(num_levels-drop_levels)]
     features = [
-        ('wavelet', DiscreteWavelet('haar', 15, 0, True)),
-        ('histogram', Map(Histogram(10), divs=16))
+        ('wavelet',
+         DiscreteWavelet('haar', num_levels, drop_levels, True, histograms))
     ]
     classifier = Classifier(preproc_min, features, postproc_standard, svm.SVC())
-    classifier.labels = ['null', 'ozone']
-    classifier.plot1d('Separation using histogram of wavelets.')
+    # classifier.labels = ['null', 'ozone']
+    classifier.plot('Separation using histogram of wavelets.')
     classifier.plot_lda_scaling(False, 'Significance of histogram features.')

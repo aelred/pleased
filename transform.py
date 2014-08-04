@@ -108,10 +108,16 @@ class Histogram(Extractor):
         self.num_bins = num_bins
 
     def fit(self, X, y):
-        pass
+        # calculate mean and standard deviation of dataset
+        x = np.concatenate([xx for xx in X])
+        stdev = np.std(x)
+        mean = np.mean(x)
+        # set range to three standard deviations
+        self.range = (mean-stdev*3, mean+stdev*3)
+        return self
 
     def extractor(self, x):
-        return np.histogram(x, self.num_bins)[0]
+        return np.histogram(x, self.num_bins, self.range)[0]
 
 
 class DecimateWindow(Extractor):
@@ -137,6 +143,17 @@ class Map(Extractor):
         self.f = f
         self.steps = steps
         self.divs = divs
+
+    def fit(self, X, y):
+        print X.shape
+        steps = self.steps or X.shape[1] / self.divs
+        try:
+            for i in range(0, X.shape[1], steps):
+                self.f = self.f.fit(X[:, i:i+steps], y)
+        except AttributeError:
+            # f is a function, not a transformer
+            pass
+        return self
 
     def extractor(self, x):
         steps = self.steps or len(x) / self.divs
@@ -173,19 +190,40 @@ class Fourier(Extractor):
 class DiscreteWavelet(Extractor):
     """ Perform a wavelet transform on the data. """
 
-    def __init__(self, kind, L, D, concat=False):
+    def __init__(self, kind, L, D, concat=False, transforms=None):
         self.kind = kind
         self.L = L
         self.D = D
         self.concat = concat
+        self.transforms = transforms
+
+    def fit(self, X, y):
+        if self.transforms is None:
+            return self
+
+        # take wavelets
+        concat = self.concat
+        self.concat = False
+        transforms = list(self.transforms)
+        self.transforms = None
+        wavelets = self.transform(X)
+        self.concat = concat
+        # run fit function over every wavelet level
+        self.transforms = [t.fit(w.T, y) for t, w in zip(transforms, wavelets.T)]
+        return self
 
     def extractor(self, x):
         wavelet = pywt.wavedec(x, self.kind, level=self.L)
         wavelet = wavelet[0:self.L-self.D]
+
+        # transform every wavelet level
+        if self.transforms is not None:
+            wavelet = [t(w) for t, w in zip(self.transforms, wavelet)]
+
         if self.concat:
             return np.concatenate(wavelet)
         else:
-            return wavelet
+            return np.array(wavelet)
 
 
 class Detrend(Extractor):
