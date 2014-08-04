@@ -66,6 +66,7 @@ class Classifier:
         return self.preprocess(np.array(X), np.array(y), np.array(sources))
 
     def preprocess(self, X, y, sources):
+        print "Preprocessing data"
         return (pipeline.Pipeline(self.preproc_pipe).fit_transform(X, y),
                 y, sources)
 
@@ -94,10 +95,12 @@ class Classifier:
             X_valid, y_valid = X_train, y_train
 
         # transform data on pipeline
+        print "Fitting LDA"
         lda_pipe = pipeline.Pipeline(
             self.extract_pipe + self.postproc_pipe + [('lda', self.lda)])
         lda_pipe.fit(X_train, y_train)
 
+        print "Predicting"
         yp_train = lda_pipe.predict(X_train)
         X_train = lda_pipe.transform(X_train)
 
