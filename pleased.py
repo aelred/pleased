@@ -5,11 +5,13 @@ from sklearn import preprocessing, svm
 from itertools import chain
 import scipy
 
+dec = [('dec', Decimate(10))]
+
 # bare minimum preprocessing to give valid data
 preproc_min = [
     ('avg', ElectrodeAvg()),
     ('poststim', PostStimulus())
-]
+] + dec
 
 # averages electrodes and detrends data
 preproc_standard = [
@@ -17,6 +19,9 @@ preproc_standard = [
     ('detrend', Detrend()),
     ('poststim', PostStimulus()),
 ]
+
+# peprocess and decimate window (reduce size by factor of 10)
+preproc_dec = preproc_standard + dec
 
 # detrend each electrode separately
 preproc_separate = [
@@ -98,9 +103,8 @@ def linear_detrending():
     2014-07-14
     Plot separation with linear detrending applied to remove experimental bias.
     """
-    detrend_class = Classifier(preproc_standard, [], postproc_standard, svm.SVC())
-    detrend_null = NullClassifier(preproc_standard, [],
-                                  postproc_standard, svm.SVC())
+    detrend_class = Classifier(preproc_dec, [], postproc_standard, svm.SVC())
+    detrend_null = NullClassifier(preproc_dec, [], postproc_standard, svm.SVC())
     detrend_class.plot('Separation with linear detrending')
     detrend_null.plot3d('Separation of null data with linear detrending', False)
 
@@ -110,10 +114,13 @@ def basic_features():
     2014-07-14
     Plot separation of basic feature extraction methods based on the mean.
     """
+    m = Mean()
+    a = Abs()
+    d = Differential()
+
     def extract(x):
-        return [mean(x), mean(map(abs, differential(x))),
-                mean(map(abs, differential(differential(x))))]
-    feature_class = Classifier(preproc_standard,
+        return [m(x), m(a(d(x))), m(a(d(d(x))))]
+    feature_class = Classifier(preproc_dec,
                                [('features', Extractor(extract))],
                                postproc_standard, svm.SVC())
     feature_class.plot('Separation using basic features')
@@ -126,10 +133,12 @@ def basic_features2():
     2014-07-14
     Plot separation using another set of basic features based on variance.
     """
+    v = Var()
+    d = Differential()
+
     def extract(x):
-        return [var(x), var(differential(x)),
-                var(differential(differential(x)))]
-    feature_class = Classifier(preproc_standard,
+        return [v(x), v(d(x)), v(d(d(x)))]
+    feature_class = Classifier(preproc_dec,
                                [('features', Extractor(extract))],
                                postproc_standard, svm.SVC())
     feature_class.plot('Separation using basic features')
@@ -142,7 +151,7 @@ def feature_ensemble():
     2014-07-15
     Plot separation using many features.
     """
-    feature_class = Classifier(preproc_standard,
+    feature_class = Classifier(preproc_dec,
                                [('features', FeatureEnsemble())],
                                postproc_standard, svm.SVC())
     feature_class.plot('Separation using multiple time-series features')
@@ -189,7 +198,7 @@ def separate_electrodes():
         ('features', Map(FeatureEnsemble(), divs=2))
     ]
 
-    classifier = Classifier(preproc_separate, features_separate,
+    classifier = Classifier(preproc_separate + dec, features_separate,
                             postproc_standard, svm.SVC())
     classifier.plot('Separation using both electrode readings')
     classifier.plot_lda_scaling(True,
@@ -280,7 +289,7 @@ def cross_correlation():
     mean = Map(MeanSubtract(), divs=2)
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('cr', CrossCorrelation())]
-    classifier = Classifier(preproc_separate, features,
+    classifier = Classifier(preproc_separate + dec, features,
                             postproc_standard, svm.SVC(), SDA(num_features=50))
     classifier.plot('Separation using cross-correlation of electrode channels.')
     classifier.plot_lda_scaling(False, 'Significance of cross-correlation values.')
@@ -298,7 +307,7 @@ def cross_correlation_windowed():
     window = Extractor(lambda x: x * np.hanning(len(x)))
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('cr', CrossCorrelation()), ('w', window)]
-    classifier = Classifier(preproc_separate, features,
+    classifier = Classifier(preproc_separate + dec, features,
                             postproc_standard, svm.SVC(), SDA(num_features=50))
     classifier.plot('Separation using cross-correlation of electrode channels.')
     classifier.plot_lda_scaling(False, 'Significance of cross-correlation values.')
@@ -315,7 +324,7 @@ def time_delay():
     mean = Map(MeanSubtract(), divs=2)
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('t', TimeDelay())]
-    classifier = Classifier(preproc_separate, features,
+    classifier = Classifier(preproc_separate + dec, features,
                             postproc_standard, svm.SVC(), lda.LDA())
     classifier.plot1d('Separation using time delay between electrode channels.')
 
@@ -331,7 +340,7 @@ def cross_correlation_ensemble():
     mean = Map(MeanSubtract(), divs=2)
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('cr', CrossCorrelation()), ('f', FeatureEnsemble())]
-    classifier = Classifier(preproc_separate, features,
+    classifier = Classifier(preproc_separate + dec, features,
                             postproc_standard, svm.SVC(), lda.LDA())
     classifier.plot('Separation using features of cross-correlation.')
     classifier.plot_lda_scaling(True, 'Significance of cross-correlation features.',
@@ -352,7 +361,7 @@ def multiple_ensembles():
 
     pre = [('concat', Concat()),
            ('detrend', Map(Detrend(), divs=2)),
-           ('post', Map(PostStimulus(), divs=2))]
+           ('post', Map(PostStimulus(), divs=2))] + dec
 
     feature = ('feature', FeatureEnsemble())
     avg = ('avg', ElectrodeAvg())
@@ -458,7 +467,8 @@ def histogram_my_separation():
         ('wavelet',
          DiscreteWavelet('haar', num_levels, drop_levels, True, histograms))
     ]
-    classifier = Classifier(preproc_min, features, postproc_standard, svm.SVC())
+    classifier = Classifier(preproc_standard, features,
+                            postproc_standard, svm.SVC())
     # classifier.labels = ['null', 'ozone']
     classifier.plot('Separation using histogram of wavelets.')
     classifier.plot_lda_scaling(False, 'Significance of histogram features.')
