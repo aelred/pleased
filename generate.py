@@ -3,7 +3,7 @@ import datapoint
 import plot
 import transform
 
-from sklearn import pipeline
+from sklearn import pipeline, decomposition
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
@@ -125,3 +125,18 @@ def plot_noise_correlation():
          ('a', abs_), ('cr', correl)])
     plot_func = lambda xx, yy: plot.datapoint(xx, yy, False)
     plot.datapoints_save(pipe.transform(X), y, 'noise_correlation', plot_func)
+
+
+def plot_ica():
+    ica = decomposition.FastICA(max_iter=1000)
+    T = [ica.fit_transform(x) for x in X]
+    plot.datapoints_save(T, y, 'ica')
+
+
+def plot_ica_plants():
+    ica = decomposition.FastICA(max_iter=1000)
+    R = [p.readings for p in plants]
+    T = [ica.fit_transform(r) for r in R]
+    n_plants = [plant.PlantData(p.name, r, p.stimuli, p.sample_freq)
+                for p, r in zip(plants, T)]
+    plot.plant_data_save(n_plants, 'ica_plants')

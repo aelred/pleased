@@ -219,8 +219,7 @@ def fourier_feature():
 
     features = [('noise', Noise(100)), ('fourier', Fourier())]
 
-    classifier = Classifier(preproc_standard, features,
-                            postproc_standard, svm.SVC())
+    classifier = Classifier(preproc_dec, features, postproc_standard, svm.SVC())
     classifier.plot('Separation using a Fourier transform')
 
 
