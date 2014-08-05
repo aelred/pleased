@@ -148,12 +148,16 @@ def balance(X, y, undersample=True):
             replicate datapoints in uncommon classes.
     Returns: A subset with the same number of every represented type.
     """
+    print "Balancing dataset"
+
     # find smallest datapoint type to decide how to balance
     all_sizes = [len(list(ys)) for yy, (Xs, ys) in group_types(X, y)]
     if undersample:
         group_size = min(all_sizes)
     else:
         group_size = max(all_sizes)
+
+    print [(yy, len(list(ys))) for yy, (Xs, ys) in group_types(X, y)]
 
     # pick a random sample from each group
     samples = [sample(Xs, ys, group_size) for yy, (Xs, ys) in group_types(X, y)]
