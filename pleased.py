@@ -5,7 +5,7 @@ from sklearn import preprocessing, svm
 from itertools import chain
 import scipy
 
-dec = [('dec', Decimate(10))]
+dec = [('dec', Decimate(16))]
 
 # bare minimum preprocessing to give valid data
 preproc_min = [

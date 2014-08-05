@@ -6,13 +6,13 @@ import random
 import plant
 
 # number of data points after every stimulus to use
-window_size = 42000
+window_size = 32768+4096
 
 # offset of window from start of stimulus (positive = after)
-window_offset = -6000
+window_offset = -4096
 
 # min offset of null data from start of readings and first stimuli
-null_offset = 6000
+null_offset = 512
 
 
 def generate(plant_data):
@@ -44,9 +44,10 @@ def generate(plant_data):
 
     # get null stimulus from windows before the first stimulus
     null_start = null_offset
+    overlap = 8
     while null_start + window_size + null_offset < first_stim:
         add_window(null_start, 'null')
-        null_start += window_size
+        null_start += window_size / overlap
 
     return X, y, [plant_data.name] * len(X)
 
