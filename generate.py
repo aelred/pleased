@@ -140,3 +140,32 @@ def plot_ica_plants():
     n_plants = [plant.PlantData(p.name, r, p.stimuli, p.sample_freq)
                 for p, r in zip(plants, T)]
     plot.plant_data_save(n_plants, 'ica_plants')
+
+
+def plot_ica_wobble():
+    # wobble readings back and forth to try and deal with time delay!
+
+    class Wobble(transform.Extractor):
+        def __init__(self, k):
+            self.k = k
+
+        def transform(self, X):
+            print X.shape
+            x1 = X[:, 0]
+            x2 = X[:, 1]
+            print x1.shape
+            print x2.shape
+
+            wob_left = [x1[self.k-i:-self.k-i].T for i in range(self.k)]
+            wob_right = [x2[self.k+i:-self.k+i].T for i in range(self.k)]
+            wobbles = np.append(wob_left, wob_right, 0)
+            print wobbles.shape
+            return wobbles.T
+
+    ica = decomposition.FastICA(2)
+    R = [p.readings for p in plants]
+    pipe = pipeline.Pipeline([('w', Wobble(30)), ('i', ica)])
+    T = [pipe.fit_transform(r) for r in R]
+    n_plants = [plant.PlantData(p.name, r, p.stimuli, p.sample_freq)
+                for p, r in zip(plants, T)]
+    plot.plant_data_save(n_plants, 'ica_wobble')
