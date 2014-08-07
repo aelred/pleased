@@ -214,7 +214,7 @@ class DiscreteWavelet(Extractor):
 
     def extractor(self, x):
         wavelet = pywt.wavedec(x, self.kind, level=self.L)
-        wavelet = wavelet[0:self.L-self.D]
+        wavelet = wavelet[self.D:]
 
         # transform every wavelet level
         if self.transforms is not None:

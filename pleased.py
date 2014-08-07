@@ -4,6 +4,7 @@ from sda import SDA
 from sklearn import preprocessing, svm
 from itertools import chain
 import scipy
+import random
 
 dec = [('dec', Decimate(16))]
 
@@ -252,9 +253,9 @@ def wavelet_separation():
     Plot separation using SDA on a wavelet transform.
     """
 
-    features = [('wavelet', DiscreteWavelet('haar', 16, 0, True))]
+    features = [('wavelet', DiscreteWavelet('haar', 15, 0, True))]
     classifier = Classifier(preproc_standard, features, postproc_standard,
-                            svm.SVC(), SDA(num_features=50))
+                            svm.SVC())  # SDA(num_features=50))
     classifier.plot('Separation using SDA on wavelet transform.')
     classifier.plot_lda_scaling(False, 'Signifiance of wavelet transform features.')
 
@@ -264,15 +265,19 @@ def wavelet_feature():
     2014-07-28
     Plot separation using SDA on feature ensemble of the wavelet transform.
     """
-
+    num_levels = 15
+    drop_levels = 3
+    ensembles = [FeatureEnsemble() for i in range(num_levels-drop_levels)]
     features = [
-        ('wavelet', DiscreteWavelet('haar', 16, 0, True, [FeatureEnsemble()] * 16)),
+        ('wavelet',
+         DiscreteWavelet('haar', num_levels, drop_levels, True, ensembles))
     ]
     classifier = Classifier(preproc_standard, features,
                             postproc_standard, svm.SVC(), SDA(num_features=20))
     classifier.plot('Separation using feature ensemble on wavelet transform.')
     labels = list(chain(
-        *[[i, '', '', 'v', '', '', 'h', '', '', ''] for i in range(13)]))
+        *[[i, '', '', 'v', '', '', 'h', '', '', '']
+          for i in range(num_levels-drop_levels)]))
     classifier.plot_lda_scaling(
         True, 'Significance of wavelet transform features.', labels)
 
@@ -360,16 +365,21 @@ def multiple_ensembles():
 
     pre = [('concat', Concat()),
            ('detrend', Map(Detrend(), divs=2)),
-           ('post', Map(PostStimulus(), divs=2))] + dec
+           ('post', Map(PostStimulus(), divs=2))]
 
     feature = ('feature', FeatureEnsemble())
     avg = ('avg', ElectrodeAvg())
 
-    avg_feat = pipeline.Pipeline([avg, feature])
-    noise = pipeline.Pipeline([avg, ('noise', Noise(100)), feature])
+    avg_feat = pipeline.Pipeline([avg] + dec + [feature])
+    noise = pipeline.Pipeline([avg] + dec + [('noise', Noise(100)), feature])
+
+    num_levels = 15
+    drop_levels = 3
     wavelet = pipeline.Pipeline(
         [avg,
-         ('wavelet', DiscreteWavelet('haar', 16, 0, True, [FeatureEnsemble()] * 16))
+         ('wavelet',
+          DiscreteWavelet('haar', num_levels, drop_levels, True,
+                          [FeatureEnsemble()] * (num_levels - drop_levels)))
          ])
 
     mov_avg = Map(MovingAvg(100), divs=2)
@@ -445,10 +455,28 @@ def histogram_ben_separation():
     mat = scipy.io.loadmat('ben.mat')
     X = mat['dwtFeats']
     y = mat['classes'].ravel()
+    sources = [''] * len(y)
     classifier = Classifier([], [], postproc_standard, svm.SVC())
 
+    cutoff = 0.75 * len(y)
+    seed = random.random()
+    random.seed(seed)
+    random.shuffle(X)
+    random.seed(seed)
+    random.shuffle(y)
+    X_train, y_train = X[:cutoff], y[:cutoff]
+    X_valid, y_valid = X[cutoff:], y[cutoff:]
+
+    # put flag inside a list to deal with weird scoping
+    train_set = [True]
+
+    # the second time this is called, return a different set of data
     def get_data(_=None):
-        return (X, y, y)
+        if train_set[0]:
+            train_set[0] = False
+            return (X_train, y_train, sources)
+        else:
+            return (X_valid, y_valid, sources)
     classifier.get_data = get_data
     classifier.plot1d('Separation using Ben\'s histograms.')
     classifier.plot_lda_scaling(False, 'Significance of histogram features.')
@@ -459,8 +487,8 @@ def histogram_my_separation():
     2014-08-01
     Attempt to emulate Ben's results above.
     """
-    num_levels = 16
-    drop_levels = 4
+    num_levels = 15
+    drop_levels = 3
     histograms = [Histogram(5) for x in range(num_levels-drop_levels)]
     features = [
         ('wavelet',
