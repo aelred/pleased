@@ -33,7 +33,7 @@ def show():
     plt.show()
 
 
-def plant_data_save(plant_list, path="plant_plots"):
+def plant_data_save(plant_list, path):
     # empty folder in advance
     files = glob.glob(path)
     for f in files:
@@ -42,12 +42,12 @@ def plant_data_save(plant_list, path="plant_plots"):
 
     for p in plant_list:
         plant_data(p)
-        plt.savefig(os.path.join(path, "%s.jpg" % p.name))
+        plt.savefig(os.path.join("plots", path, "%s.jpg" % p.name))
         plt.clf()
         plt.close()
 
 
-def datapoints_save(X, y, path="plots", plot_func=datapoint):
+def datapoints_save(X, y, path, plot_func=datapoint):
     type_count = Counter()
 
     # empty folder in advance
@@ -59,6 +59,6 @@ def datapoints_save(X, y, path="plots", plot_func=datapoint):
     for xx, yy in zip(X, y):
         type_count[yy] += 1
         plot_func(xx, yy)
-        plt.savefig(os.path.join(path, "%s_%d.png" % (yy, type_count[yy])))
+        plt.savefig(os.path.join("plots", path, "%s_%d.png" % (yy, type_count[yy])))
         plt.clf()
         plt.close()

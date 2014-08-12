@@ -23,14 +23,15 @@ datapoint.save("data.csv", X, y, sources)
 concat = transform.Concat()
 split = transform.Split(divs=2)
 detrend = transform.Map(transform.Detrend(), divs=2)
+transpose = transform.Transpose()
 
 
 def plot_plants():
-    plot.plant_data_save(plants)
+    plot.plant_data_save(plants, "plants")
 
 
 def plot_datapoints():
-    plot.datapoints_save(X, y)
+    plot.datapoints_save(X, y, "datapoints")
 
 
 def plot_detrended():
@@ -111,11 +112,12 @@ def plot_fourier():
     plot.datapoints_save(pipe.transform(X), y, 'fourier', plot_func)
 
 
-noise = transform.Map(transform.Noise(100), divs=2)
+noise = transform.Map(transform.Noise(1000), divs=2)
 
 
 def plot_noise():
-    pipe = pipeline.Pipeline([('c', concat), ('n', noise), ('s', split)])
+    pipe = pipeline.Pipeline([('c', concat), ('n', noise),
+                              ('s', split)])
     plot.datapoints_save(pipe.transform(X), y, 'noise')
 
 
