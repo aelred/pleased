@@ -171,3 +171,29 @@ def plot_ica_wobble():
     n_plants = [plant.PlantData(p.name, r, p.stimuli, p.sample_freq)
                 for p, r in zip(plants, T)]
     plot.plant_data_save(n_plants, 'ica_wobble')
+
+
+def plot_ica_duet():
+    # plot ICA using DUET algorithm
+    du = duet.DUET(numsources=4)
+    R = [p.readings for p in plants]
+    T = [du.transform(r) for r in R]
+    n_plants = [plant.PlantData(p.name, r, p.stimuli, p.sample_freq)
+                for p, r in zip(plants, T)]
+    plot.plant_data_save(n_plants, 'ica_duet')
+
+
+def plot_ica_noise():
+    # plot ICA on low-level noise
+    ica = decomposition.FastICA(max_iter=1000)
+    T = [ica.fit_transform(split.extractor(noise.extractor(concat.extractor(x))))
+         for x in X]
+    plot.datapoints_save(T, y, 'ica_noise')
+
+
+def plot_ica_duet_noise():
+    # plot ICA using DUET algorithm
+    du = duet.DUET(numsources=4)
+    T = [du.transform(split.extractor(noise.extractor(concat.extractor(x))))
+         for x in X]
+    plot.datapoints_save(T, y, 'ica_duet_noise')
