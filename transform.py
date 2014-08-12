@@ -1,4 +1,4 @@
-from sklearn import base
+from sklearn import base, decomposition
 import numpy as np
 import pywt
 from scipy.stats import linregress
@@ -262,28 +262,34 @@ class PreStimulus(Extractor):
         return x[0:-datapoint.window_offset]
 
 
-class ElectrodeAvg(Extractor):
+class ElectrodeOp(Extractor):
+    """ Perform some operation between the two electrode channels. """
+
+    def __init__(self, op=None):
+        if op is not None:
+            self.op = op
+
+    def extractor(self, x):
+        try:
+            return [self.op(xx[0], xx[1]) for xx in x]
+        except IndexError:
+            # if data is concatenated
+            x = x.reshape((-1, 2))
+            return self.extractor(x)
+
+
+class ElectrodeAvg(ElectrodeOp):
     """ Take the average of the two electrode values. """
 
-    def extractor(self, x):
-        try:
-            return [(xx[0] + xx[1]) / 2.0 for xx in x]
-        except IndexError:
-            # if data is concatenated
-            x = x.reshape((-1, 2))
-            return self.extractor(x)
+    def op(self, x1, x2):
+        return (x1 + x2) / 2
 
 
-class ElectrodeDiff(Extractor):
+class ElectrodeDiff(ElectrodeOp):
     """ Take the difference of the two electrode values. """
 
-    def extractor(self, x):
-        try:
-            return [xx[0] - xx[1] for xx in x]
-        except IndexError:
-            # if data is concatenated
-            x = x.reshape((-1, 2))
-            return self.extractor(x)
+    def op(self, x1, x2):
+        return x1 - x2
 
 
 class MovingAvg(Extractor):
@@ -326,6 +332,16 @@ class Noise(Extractor):
     def extractor(self, x):
         smoothed = self.mov_avg(x)
         return [xx - ss for xx, ss in zip(x[self.n/2:-self.n/2], smoothed)]
+
+
+class ICA(Extractor):
+    """ Perform fast ICA over every element. """
+
+    def __init__(self):
+        self.ica = decomposition.FastICA()
+
+    def extractor(self, x):
+        return np.ravel(self.ica.fit_transform(x.reshape(-1, 2)), 'F')
 
 
 class FeatureEnsemble(Extractor):

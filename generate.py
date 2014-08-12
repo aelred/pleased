@@ -198,3 +198,11 @@ def plot_ica_duet_noise():
     T = [du.transform(split.extractor(noise.extractor(concat.extractor(x))))
          for x in X]
     plot.datapoints_save(T, y, 'ica_duet_noise')
+
+
+def plot_mult_noise():
+    # multiply the noise between the two channels
+    # this should identify correlated and anti-correlated behaviour
+    mult = transform.ElectrodeOp(lambda x1, x2: x1 * x2)
+    pipe = pipeline.Pipeline([('c', concat), ('n', noise), ('m', mult)])
+    plot.datapoints_save(pipe.transform(X), y, 'mult_noise')

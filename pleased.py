@@ -1,7 +1,7 @@
 from learn import *
 from transform import *
 from sda import SDA
-from sklearn import preprocessing, svm
+from sklearn import preprocessing, svm, decomposition
 from itertools import chain
 import scipy
 import random
@@ -489,7 +489,7 @@ def histogram_my_separation():
     """
     num_levels = 15
     drop_levels = 3
-    histograms = [Histogram(5) for x in range(num_levels-drop_levels)]
+    histograms = [Histogram(10) for x in range(num_levels-drop_levels)]
     features = [
         ('wavelet',
          DiscreteWavelet('haar', num_levels, drop_levels, True, histograms))
@@ -499,3 +499,21 @@ def histogram_my_separation():
     # classifier.labels = ['null', 'ozone']
     classifier.plot('Separation using histogram of wavelets.')
     classifier.plot_lda_scaling(False, 'Significance of histogram features.')
+
+
+def ica_noise_separation():
+    """
+    2014-08-12
+    Separate data using independent component analysis of the noise.
+    """
+    features = [('concat', Concat()),
+                ('noise', Map(Noise(1000), divs=2)),
+                ('ica', ICA()),
+                ('features', Map(FeatureEnsemble(), divs=2))]
+    classifier = Classifier(preproc_separate, features,
+                            postproc_standard, svm.SVC())
+    classifier.plot('Separation using ICA of noise')
+    classifier.plot_lda_scaling(True, 'Significance of features in ICA of noise.',
+                                ['mean', 'mean(diff1)', 'mean(diff2)',
+                                 'var', 'var(diff1)', 'var(diff2)',
+                                 'hmob', 'hcom', 'skewness', 'kurtosis'] * 2)
