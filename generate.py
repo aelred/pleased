@@ -2,6 +2,7 @@ import plant
 import datapoint
 import plot
 import transform
+import duet
 
 from sklearn import pipeline, decomposition
 import numpy as np
