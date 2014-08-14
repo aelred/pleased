@@ -7,6 +7,7 @@ import duet
 from sklearn import pipeline, decomposition
 import numpy as np
 import scipy
+import pywt
 import matplotlib.pyplot as plt
 
 # load all plant data in directory
@@ -204,5 +205,23 @@ def plot_mult_noise():
     # multiply the noise between the two channels
     # this should identify correlated and anti-correlated behaviour
     mult = transform.ElectrodeOp(lambda x1, x2: x1 * x2)
-    pipe = pipeline.Pipeline([('c', concat), ('n', noise), ('m', mult)])
+    pipe = pipeline.Pipeline([('n', noise), ('m', mult)])
     plot.datapoints_save(pipe.transform(X), y, 'mult_noise')
+
+
+def plot_ica_wavelets():
+    # plot ICA performed between electrode channels on each wavelet level
+
+    def wave_ica(x):
+        ica = decomposition.FastICA(max_iter=10000)
+        # calculate wavelet transform of each
+        w1 = pywt.wavedec(x[:, 0], 'haar', level=12)
+        w2 = pywt.wavedec(x[:, 1], 'haar', level=12)
+        # calculate ica between components
+        t = [ica.fit_transform(np.array([lev1, lev2]).T)
+             for lev1, lev2 in zip(w1, w2)]
+        return np.array(t)
+
+    extractor = transform.Extractor(wave_ica)
+    T = extractor.transform(X)
+    plot.datapoints_save(T, y, 'wavelet_ica', plot.datapoint_set)
