@@ -4,6 +4,7 @@ import pywt
 from scipy.stats import linregress
 import datapoint
 from scipy.signal import decimate
+import parmap
 
 
 class Extractor(base.BaseEstimator):
@@ -14,7 +15,7 @@ class Extractor(base.BaseEstimator):
             self.extractor = extractor
 
     def transform(self, X):
-        return np.array([self(x) for x in X], ndmin=2)
+        return np.array(parmap.parmap(self.extractor, X), ndmin=2)
 
     def fit(self, X, y):
         return self
