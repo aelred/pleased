@@ -1,7 +1,7 @@
 from learn import *
 from transform import *
 from sda import SDA
-from sklearn import preprocessing, svm, decomposition
+from sklearn import preprocessing
 from itertools import chain
 import scipy
 import random
@@ -48,10 +48,9 @@ postproc_standard = [
 feat_class = Classifier(
     preproc_standard,
     extract_decimate_ensemble,
-    postproc_standard,
-    svm.SVC())
+    postproc_standard)
 
-min_class = Classifier(preproc_min, [], postproc_standard, svm.SVC())
+min_class = Classifier(preproc_min, [], postproc_standard)
 
 
 def basic_separator():
@@ -69,7 +68,7 @@ def basic_separator_validation():
     """
     min_class.plot('Separation with minimal pre-processing.', True)
 
-null_class = NullClassifier(preproc_min, [], postproc_standard, svm.SVC())
+null_class = NullClassifier(preproc_min, [], postproc_standard)
 
 
 def null_only_plot():
@@ -104,8 +103,8 @@ def linear_detrending():
     2014-07-14
     Plot separation with linear detrending applied to remove experimental bias.
     """
-    detrend_class = Classifier(preproc_dec, [], postproc_standard, svm.SVC())
-    detrend_null = NullClassifier(preproc_dec, [], postproc_standard, svm.SVC())
+    detrend_class = Classifier(preproc_dec, [], postproc_standard)
+    detrend_null = NullClassifier(preproc_dec, [], postproc_standard)
     detrend_class.plot('Separation with linear detrending')
     detrend_null.plot3d('Separation of null data with linear detrending', False)
 
@@ -123,7 +122,7 @@ def basic_features():
         return [m(x), m(a(d(x))), m(a(d(d(x))))]
     feature_class = Classifier(preproc_dec,
                                [('features', Extractor(extract))],
-                               postproc_standard, svm.SVC())
+                               postproc_standard)
     feature_class.plot('Separation using basic features')
     feature_class.plot_lda_scaling(True, 'Significance of basic features',
                                    ['mean', 'diff1', 'diff2'])
@@ -141,7 +140,7 @@ def basic_features2():
         return [v(x), v(d(x)), v(d(d(x)))]
     feature_class = Classifier(preproc_dec,
                                [('features', Extractor(extract))],
-                               postproc_standard, svm.SVC())
+                               postproc_standard)
     feature_class.plot('Separation using basic features')
     feature_class.plot_lda_scaling(True, 'Significance of basic features',
                                    ['var', 'var(diff1)', 'var(diff2)'])
@@ -154,7 +153,7 @@ def feature_ensemble():
     """
     feature_class = Classifier(preproc_dec,
                                [('features', FeatureEnsemble())],
-                               postproc_standard, svm.SVC())
+                               postproc_standard)
     feature_class.plot('Separation using multiple time-series features')
     feature_class.plot_lda_scaling(True, 'Significance of time-series features',
                                    ['mean', 'mean(diff1)', 'mean(diff2)', 'var',
@@ -169,7 +168,7 @@ def noise_extraction():
     """
     classifier = Classifier(preproc_min,
                             [('noise', Noise(100))],
-                            postproc_standard, svm.SVC())
+                            postproc_standard)
     classifier.plot('Separation using noise in time-series')
     classifier.plot_lda_scaling(False, 'Significance of noise in time-series')
 
@@ -182,7 +181,7 @@ def noise_features():
     classifier = Classifier(preproc_min,
                             [('noise', Noise(100)),
                              ('features', FeatureEnsemble())],
-                            postproc_standard, svm.SVC())
+                            postproc_standard)
     classifier.plot('Separation using noise and feature ensemble')
     classifier.plot_lda_scaling(True, 'Significance of features in noise.',
                                 ['mean', 'mean(diff1)', 'mean(diff2)',
@@ -200,7 +199,7 @@ def separate_electrodes():
     ]
 
     classifier = Classifier(preproc_separate + dec, features_separate,
-                            postproc_standard, svm.SVC())
+                            postproc_standard)
     classifier.plot('Separation using both electrode readings')
     classifier.plot_lda_scaling(True,
                                 'Significance of features across both electrodes.',
@@ -220,7 +219,7 @@ def fourier_feature():
 
     features = [('noise', Noise(100)), ('fourier', Fourier())]
 
-    classifier = Classifier(preproc_dec, features, postproc_standard, svm.SVC())
+    classifier = Classifier(preproc_dec, features, postproc_standard)
     classifier.plot('Separation using a Fourier transform')
 
 
@@ -230,7 +229,7 @@ def sda_separation():
     Plot separation using Sparse Discriminant Analysis.
     """
 
-    classifier = Classifier(preproc_min, [], postproc_standard, svm.SVC(), SDA())
+    classifier = Classifier(preproc_min, [], postproc_standard, SDA())
     classifier.plot('Separation using SDA')
     classifier.plot_lda_scaling(False, 'Significance of features using SDA scaling')
 
@@ -273,7 +272,7 @@ def wavelet_feature():
          DiscreteWavelet('haar', num_levels, drop_levels, True, ensembles))
     ]
     classifier = Classifier(preproc_standard, features,
-                            postproc_standard, svm.SVC(), SDA(num_features=20))
+                            postproc_standard, SDA(num_features=20))
     classifier.plot('Separation using feature ensemble on wavelet transform.')
     labels = list(chain(
         *[[i, '', '', 'v', '', '', 'h', '', '', '']
@@ -294,7 +293,7 @@ def cross_correlation():
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('cr', CrossCorrelation())]
     classifier = Classifier(preproc_separate + dec, features,
-                            postproc_standard, svm.SVC(), SDA(num_features=50))
+                            postproc_standard, SDA(num_features=50))
     classifier.plot('Separation using cross-correlation of electrode channels.')
     classifier.plot_lda_scaling(False, 'Significance of cross-correlation values.')
 
@@ -312,7 +311,7 @@ def cross_correlation_windowed():
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('cr', CrossCorrelation()), ('w', window)]
     classifier = Classifier(preproc_separate + dec, features,
-                            postproc_standard, svm.SVC(), SDA(num_features=50))
+                            postproc_standard, SDA(num_features=50))
     classifier.plot('Separation using cross-correlation of electrode channels.')
     classifier.plot_lda_scaling(False, 'Significance of cross-correlation values.')
 
@@ -329,7 +328,7 @@ def time_delay():
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('t', TimeDelay())]
     classifier = Classifier(preproc_separate + dec, features,
-                            postproc_standard, svm.SVC(), lda.LDA())
+                            postproc_standard, lda.LDA())
     classifier.plot1d('Separation using time delay between electrode channels.')
 
 
@@ -345,7 +344,7 @@ def cross_correlation_ensemble():
     features = [('m', mov_avg), ('d', deriv), ('me', mean),
                 ('a', Abs()), ('cr', CrossCorrelation()), ('f', FeatureEnsemble())]
     classifier = Classifier(preproc_separate + dec, features,
-                            postproc_standard, svm.SVC(), lda.LDA())
+                            postproc_standard, lda.LDA())
     classifier.plot('Separation using features of cross-correlation.')
     classifier.plot_lda_scaling(True, 'Significance of cross-correlation features.',
                                 ['mean', 'mean(diff1)', 'mean(diff2)',
@@ -439,7 +438,7 @@ def noise_correlation_separation():
                              ('m', mov_avg), ('d', deriv), ('me', mean),
                              ('a', Abs()), ('c', CrossCorrelation()),
                              ('f', FeatureEnsemble())],
-                            postproc_standard, svm.SVC())
+                            postproc_standard)
     classifier.plot('Separation using cross-correlation of noise derivative.')
     classifier.plot_lda_scaling(True, 'Significance of cross-correlation of noise',
                                 ['mean', 'mean(diff1)', 'mean(diff2)',
@@ -456,7 +455,7 @@ def histogram_ben_separation():
     X = mat['dwtFeats']
     y = mat['classes'].ravel()
     sources = [''] * len(y)
-    classifier = Classifier([], [], postproc_standard, svm.SVC())
+    classifier = Classifier([], [], postproc_standard)
 
     cutoff = 0.75 * len(y)
     seed = random.random()
@@ -495,7 +494,7 @@ def histogram_my_separation():
          DiscreteWavelet('haar', num_levels, drop_levels, True, histograms))
     ]
     classifier = Classifier(preproc_standard, features,
-                            postproc_standard, svm.SVC())
+                            postproc_standard)
     # classifier.labels = ['null', 'ozone']
     classifier.plot('Separation using histogram of wavelets.')
     classifier.plot_lda_scaling(False, 'Significance of histogram features.')
@@ -510,7 +509,7 @@ def ica_noise_separation():
                 ('ica', ICA()),
                 ('features', Map(FeatureEnsemble(), divs=2))]
     classifier = Classifier(preproc_separate, features,
-                            postproc_standard, svm.SVC())
+                            postproc_standard)
     classifier.plot('Separation using ICA of noise')
     classifier.plot_lda_scaling(True, 'Significance of features in ICA of noise.',
                                 ['mean', 'mean(diff1)', 'mean(diff2)',
@@ -529,7 +528,7 @@ def mult_noise_separation():
     features = [('n', Map(Noise(1000), divs=2)),
                 ('m', mult), ('f', FeatureEnsemble())]
     classifier = Classifier(preproc_separate, features,
-                            postproc_standard, svm.SVC())
+                            postproc_standard, SDA(num_features=50))
     classifier.plot('Separation using multiplied noise.')
     classifier.plot_lda_scaling(True,
                                 'Significance of features in multiplied noise.',

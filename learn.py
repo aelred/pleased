@@ -9,6 +9,7 @@ from itertools import groupby
 
 import plant
 import datapoint
+import plot
 
 
 def_labels = ['null', 'ozone', 'H2SO4']
@@ -40,13 +41,11 @@ def _scatter(plt_func, axes, X, y, yp, label, mark_tp, mark_fp):
 class Classifier:
 
     def __init__(self, preproc_pipe, extract_pipe,
-                 postproc_pipe, classifier,
-                 lda_=None, labels=None, params=None):
+                 postproc_pipe, classifier=None, labels=None, params=None):
         self.preproc_pipe = preproc_pipe
         self.extract_pipe = extract_pipe
         self.postproc_pipe = postproc_pipe
-        self.classifier = classifier
-        self.lda = lda_ or lda.LDA()
+        self.classifier = classifier or lda.LDA()
         self.params = params or [{}]
         self.labels = labels or def_labels
 
@@ -63,12 +62,16 @@ class Classifier:
 
         X, sources = zip(*X)
 
-        return self.preprocess(np.array(X), np.array(y), np.array(sources))
+        return self.preprocess(np.array(X)), np.array(y), np.array(sources)
 
-    def preprocess(self, X, y, sources):
+    def preprocess(self, X):
         print "Preprocessing data"
-        return (pipeline.Pipeline(self.preproc_pipe).fit_transform(X, y),
-                y, sources)
+        return pipeline.Pipeline(self.preproc_pipe).fit_transform(X)
+
+    def _pipeline(self):
+        return pipeline.Pipeline(
+            self.extract_pipe + self.postproc_pipe +
+            [('classifier', self.classifier)])
 
     def _split_data(self, plants=None):
         # load plants if parameter is not provided
@@ -86,7 +89,7 @@ class Classifier:
         X_valid, y_valid, source_valid = self.get_data(valid_plants)
         return X_train, X_valid, y_train, y_valid, source_train, source_valid
 
-    def _run_lda(self, split=True):
+    def _run_classifier(self, split=True):
         # load and preprocess data
         if split:
             X_train, X_valid, y_train, y_valid, _, _ = self._split_data()
@@ -95,24 +98,23 @@ class Classifier:
             X_valid, y_valid = X_train, y_train
 
         # transform data on pipeline
-        print "Fitting LDA"
-        lda_pipe = pipeline.Pipeline(
-            self.extract_pipe + self.postproc_pipe + [('lda', self.lda)])
-        lda_pipe.fit(X_train, y_train)
+        print "Fitting classifier"
+        pipe = self._pipeline()
+        pipe.fit(X_train, y_train)
 
         print "Predicting"
-        yp_train = lda_pipe.predict(X_train)
-        X_train = lda_pipe.transform(X_train)
+        yp_train = pipe.predict(X_train)
+        X_train = pipe.transform(X_train)
 
         if split:
-            yp_valid = lda_pipe.predict(X_valid)
-            X_valid = lda_pipe.transform(X_valid)
+            yp_valid = pipe.predict(X_valid)
+            X_valid = pipe.transform(X_valid)
             return X_train, X_valid, y_train, y_valid, yp_train, yp_valid
         else:
             return X_train, y_train, yp_train
 
     def plot_lda_scaling(self, barchart, title=None, labels=None):
-        self._run_lda(split=False)
+        self._run_classifier(split=False)
         data = np.sum(np.absolute(self.lda.scalings_), 1)
         if barchart:
             plt.bar(range(len(data)), data)
@@ -128,10 +130,10 @@ class Classifier:
     def _plot(self, title, fig_func, plt_func, split):
         # transform data by linear discriminant analysis
         if split:
-            Xt, Xv, yt, yv, ypt, ypv = self._run_lda(True)
+            Xt, Xv, yt, yv, ypt, ypv = self._run_classifier(True)
             train_label = 'train '
         else:
-            Xt, yt, ypt = self._run_lda(False)
+            Xt, yt, ypt = self._run_classifier(False)
             train_label = ''
 
         fig, axes = fig_func()
@@ -220,13 +222,9 @@ class Classifier:
         class_valid = [(d[0], len(list(d[1]))) for d in groupby(y_valid)]
         print "Classes in validation set:", class_valid
 
-        # set up pipeline
-        pipe = pipeline.Pipeline(
-            self.extract_pipe + self.postproc_pipe +
-            [('classifier', self.classifier)])
-
         # perform grid search on pipeline, get best parameters from training data
-        grid = grid_search.GridSearchCV(pipe, self.params, cv=5, verbose=2)
+        grid = grid_search.GridSearchCV(
+            self._pipeline(), self.params, cv=5, verbose=2)
         grid.fit(X_train, y_train)
         classifier = grid.best_estimator_
 
@@ -238,6 +236,28 @@ class Classifier:
 
         print "Validation data results:"
         print validation_score
+
+    def plot_online(self, plant_data):
+        # plot the classifier when run on scrolling window on plant data
+        X = []
+
+        print "Getting datapoints"
+
+        for i in range(0, len(plant_data.readings)-datapoint.window_size, 10000):
+            X.append(plant_data.readings[i:i+datapoint.window_size])
+
+        self._run_classifier(False)
+
+        print "Transforming"
+        pipe = pipeline.Pipeline(self.extract_pipe + self.postproc_pipe)
+        X = pipe.transform(self.preprocess(X))
+
+        print "Predicting datapoints"
+        probs = self.classifier.predict_proba(X)
+
+        plot.plant_data(plant_data)
+        plt.plot(probs)
+        plt.show()
 
 
 class NullClassifier(Classifier):
@@ -253,4 +273,4 @@ class NullClassifier(Classifier):
             else:
                 return yy
         y = [set_class(yy, source) for yy, source in zip(y, sources)]
-        return Classifier.preprocess(self, X, y, sources)
+        return Classifier.preprocess(self, X), y, sources
