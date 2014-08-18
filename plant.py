@@ -27,6 +27,9 @@ Stimulus = namedtuple('Stimulus', ['type', 'time'])
 PlantData = namedtuple('PlantData',
                        ['name', 'readings', 'stimuli', 'sample_freq'])
 
+# pre-loaded plant data
+_plant_data = None
+
 
 def load_all(path="."):
     """
@@ -37,12 +40,18 @@ def load_all(path="."):
     Returns: A list of PlantData
     """
 
+    # first check if data has already been loaded (for super-quick loading!)
+    global _plant_data
+    if _plant_data:
+        return _plant_data
+
     # first check for previously generated plant data (for quicker loading)
     plant_file = os.path.join(path, "plant_data")
     if os.path.isfile(plant_file):
         with file(plant_file, 'r') as f:
             print "Loading from generated file %s" % plant_file
-            return cPickle.load(f)
+            _plant_data = cPickle.load(f)
+            return _plant_data
 
     plants = []
 
@@ -56,7 +65,8 @@ def load_all(path="."):
     with file(plant_file, 'w') as f:
         cPickle.dump(plants, f)
 
-    return plants
+    _plant_data = plants
+    return _plant_data
 
 
 def load_txt(path):
