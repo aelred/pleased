@@ -526,12 +526,21 @@ def mult_noise_separation():
     """
     mult = ElectrodeOp(lambda x1, x2: x1 * x2)
     features = [('n', Map(Noise(1000), divs=2)),
-                ('m', mult), ('f', FeatureEnsemble())]
+                ('m', mult)]
     classifier = Classifier(preproc_separate, features,
                             postproc_standard, SDA(num_features=50))
     classifier.plot('Separation using multiplied noise.')
-    classifier.plot_lda_scaling(True,
-                                'Significance of features in multiplied noise.',
-                                ['mean', 'mean(diff1)', 'mean(diff2)',
-                                 'var', 'var(diff1)', 'var(diff2)',
-                                 'hmob', 'hcom', 'skewness', 'kurtosis'])
+    classifier.plot_lda_scaling(False,
+                                'Significance of features in multiplied noise.')
+
+
+def feature_ensemble_probs():
+    """
+    2014-08-18
+    Plot class probabilities of feature ensemble over plant data.
+    """
+    feature_class = Classifier(preproc_dec,
+                               [('features', FeatureEnsemble())],
+                               postproc_standard)
+    plants = plant.load_all()
+    feature_class.plot_online(plants[0])
