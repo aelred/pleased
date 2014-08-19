@@ -481,10 +481,10 @@ def histogram_ben_separation():
     classifier.plot_lda_scaling(False, 'Significance of histogram features.')
 
 
-def histogram_my_separation():
+def histogram_classifier():
     """
     2014-08-01
-    Attempt to emulate Ben's results above.
+    Return wavelet histogram classifier.
     """
     num_levels = 15
     drop_levels = 3
@@ -493,9 +493,15 @@ def histogram_my_separation():
         ('wavelet',
          DiscreteWavelet('haar', num_levels, drop_levels, True, histograms))
     ]
-    classifier = Classifier(preproc_standard, features,
-                            postproc_standard)
-    # classifier.labels = ['null', 'ozone']
+    return Classifier(preproc_standard, features, postproc_standard)
+
+
+def histogram_my_separation():
+    """
+    2014-08-01
+    Attempt to emulate Ben's results above.
+    """
+    classifier = histogram_classifier()
     classifier.plot('Separation using histogram of wavelets.')
     classifier.plot_lda_scaling(False, 'Significance of histogram features.')
 
@@ -542,5 +548,12 @@ def feature_ensemble_probs():
     feature_class = Classifier(preproc_dec,
                                [('features', FeatureEnsemble())],
                                postproc_standard)
-    plants = plant.load_all()
-    feature_class.plot_online(plants[0])
+    feature_class.plot_online('online')
+
+
+def min_class_probs():
+    """
+    2014-08-19
+    Plot class probabilities of minimal classifier to illustrate overfitting.
+    """
+    min_class.plot_online('online_min')
