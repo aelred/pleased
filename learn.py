@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from mpl_toolkits.mplot3d import axes3d, Axes3D
 from itertools import groupby
+import os
 
 import plant
 import datapoint
@@ -237,27 +238,43 @@ class Classifier:
         print "Validation data results:"
         print validation_score
 
-    def plot_online(self, plant_data):
+    def plot_online(self, path):
         # plot the classifier when run on scrolling window on plant data
-        X = []
 
-        print "Getting datapoints"
-
-        for i in range(0, len(plant_data.readings)-datapoint.window_size, 10000):
-            X.append(plant_data.readings[i:i+datapoint.window_size])
-
+        # first, train classifier
         self._run_classifier(False)
 
-        print "Transforming"
-        pipe = pipeline.Pipeline(self.extract_pipe + self.postproc_pipe)
-        X = pipe.transform(self.preprocess(X))
+        for plant_data in plant.load_all():
+            X = []
+            coords = []
 
-        print "Predicting datapoints"
-        probs = self.classifier.predict_proba(X)
+            print "Getting datapoints"
+            skip = 10000
 
-        plot.plant_data(plant_data)
-        plt.plot(probs)
-        plt.show()
+            for i in range(0, len(plant_data.readings)-datapoint.window_size, skip):
+                X.append(plant_data.readings[i:i+datapoint.window_size])
+                coords.append(i)
+
+            print "Transforming"
+            pipe = pipeline.Pipeline(self.extract_pipe + self.postproc_pipe)
+            X = pipe.transform(self.preprocess(X))
+
+            print "Predicting datapoints"
+            probs = self.classifier.predict_proba(X)
+
+            print plant_data.readings.shape
+            print probs.shape
+
+            plot.plant_data(plant_data)
+            for p, c in zip(probs.T, self.classifier.classes_):
+                plt.plot(coords, p, label=c)
+
+            plt.legend()
+
+            # save figure
+            plt.savefig(os.path.join("plots", path, "%s.jpg" % plant_data.name))
+            plt.clf()
+            plt.close()
 
 
 class NullClassifier(Classifier):
