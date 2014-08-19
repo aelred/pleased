@@ -6,7 +6,7 @@ import random
 import plant
 
 # number of data points after every stimulus to use
-window_size = 32768+4096
+window_size = 16384+4096
 
 # offset of window from start of stimulus (positive = after)
 window_offset = -4096
@@ -35,6 +35,9 @@ def generate(plant_data):
         if len(window) == window_size:
             X.append(window)
             y.append(stim_type)
+        else:
+            print "Dropping stimulus %s, window too small" % plant_data.name
+            print "Size: %d, Required: %d" % (len(window), window_size)
 
     for stim in plant_data.stimuli:
         # create a window on each stimulus
