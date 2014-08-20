@@ -188,6 +188,35 @@ class Fourier(Extractor):
         return np.fft.rfft(x)
 
 
+class PowerSpectralDensity(Extractor):
+    """ Calculate power spectral density of time series in 2D. """
+
+    def __init__(self, window_size, window_step=None):
+        self.window_size = window_size
+        self.window_step = window_step or window_size / 2
+
+    def extractor(self, x):
+        # take short-time windowed fourier transforms of data
+        psd = []
+        for i in range(0, len(x)-self.window_size, self.window_step):
+            # get window
+            w = np.hanning(self.window_size) * x[i:i+self.window_size]
+            # calculate periodogram of window
+            fw = np.square(np.fft.rfft(w))
+            # add to power spectral density
+            psd.append(fw)
+
+        return np.array(psd)
+
+
+class PowerSpectralDensityAvg(PowerSpectralDensity):
+    """ Calculate power spectral density of time series averaged. """
+
+    def extractor(self, x):
+        psd2d = PowerSpectralDensity.extractor(self, x)
+        return psd2d.sum(axis=0)
+
+
 class DiscreteWavelet(Extractor):
     """ Perform a wavelet transform on the data. """
 

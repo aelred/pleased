@@ -4,7 +4,7 @@ import plot
 import transform
 import duet
 
-from sklearn import pipeline, decomposition
+from sklearn import pipeline, decomposition, preprocessing
 import numpy as np
 import scipy
 import pywt
@@ -103,13 +103,14 @@ def plot_cross_correlation_abs():
 def plot_fourier():
     # plot fourier transform
     pipe = pipeline.Pipeline(
-        [('c', concat), ('p', transform.PostStimulus()),
+        [('c', concat),
+         ('p', transform.Map(transform.PostStimulus(), divs=2)),
          ('w', transform.Map(window, divs=2)),
          ('f', transform.Map(transform.Fourier(), divs=2)),
          ('s', split)])
 
     def plot_func(xx, yy):
-        plt.yscale('log')
+        plt.ylim(0.0, 0.1)
         plot.datapoint(xx, yy, False)
     plot.datapoints_save(pipe.transform(X), y, 'fourier', plot_func)
 
@@ -225,3 +226,33 @@ def plot_ica_wavelets():
     extractor = transform.Extractor(wave_ica)
     T = extractor.transform(X)
     plot.datapoints_save(T, y, 'wavelet_ica', plot.datapoint_set)
+
+
+def plot_power_spectral_density():
+    # plot power spectral density of data
+    pipe = pipeline.Pipeline(
+        [('c', concat),
+         ('p', transform.Map(transform.PostStimulus(), divs=2)),
+         ('w', transform.Map(transform.PowerSpectralDensityAvg(4096), divs=2)),
+         ('s', split)])
+
+    def plot_func(xx, yy):
+        plt.ylim(0.0, 0.01)
+        plot.datapoint(xx, yy, False)
+    plot.datapoints_save(pipe.transform(X), y, 'psd', plot_func)
+
+
+def plot_power_spectral_density_2d():
+    # normalize function, by increasing size of high-frequency components
+    norm = transform.Extractor(lambda x: np.array(x * np.arange(1, x.shape[1]+1)))
+
+    # plot power spectral density of data in 2D
+    pipe = pipeline.Pipeline(
+        [('a', transform.ElectrodeAvg()),
+         ('p', transform.PostStimulus()),
+         ('w', transform.PowerSpectralDensity(256)),
+         ('n', norm)])
+
+    def plot_func(xx, yy):
+        plt.pcolormesh(xx)
+    plot.datapoints_save(pipe.transform(X), y, 'psd2d', plot_func)
