@@ -80,6 +80,18 @@ class Decimate(Extractor):
         return decimate(x, self.factor, ftype='fir')
 
 
+class Average2D(Extractor):
+    """ Reduce size of a 2D array by averaging. """
+
+    def __init__(self, factors):
+        self.factors = factors
+
+    def extractor(self, x):
+        new = x.reshape([x.shape[0] / self.factors[0], self.factors[0],
+                         x.shape[1] / self.factors[1], self.factors[1]])
+        return new.mean(-1).mean(1)
+
+
 class Window(Extractor):
     """ Apply a function to overlapping windows. """
 
