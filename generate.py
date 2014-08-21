@@ -243,15 +243,15 @@ def plot_power_spectral_density():
 
 
 def plot_power_spectral_density_2d():
-    # normalize function, by increasing size of high-frequency components
-    norm = transform.Extractor(lambda x: np.array(x * np.arange(1, x.shape[1]+1)))
+    # remove first few elements which are always huuuge
+    chop = transform.Extractor(lambda x: x[:, 4:])
 
     # plot power spectral density of data in 2D
     pipe = pipeline.Pipeline(
         [('a', transform.ElectrodeAvg()),
          ('p', transform.PostStimulus()),
          ('w', transform.PowerSpectralDensity(256)),
-         ('n', norm)])
+         ('c', chop)])
 
     def plot_func(xx, yy):
         plt.pcolormesh(xx)
