@@ -557,3 +557,17 @@ def min_class_probs():
     Plot class probabilities of minimal classifier to illustrate overfitting.
     """
     min_class.plot_online('online_min')
+
+
+def power_spectral_density_separation():
+    """
+    2014-08-21
+    Plot separation using power spectral density.
+    """
+    classifier = Classifier(preproc_standard,
+                            [('psd', PowerSpectralDensityAvg(256))],
+                            postproc_standard)
+
+    classifier.plot('Separation using Power Spectral Density.')
+    classifier.plot_lda_scaling(False,
+                                'Signififance of Power Spectral Density features.')
