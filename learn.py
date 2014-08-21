@@ -116,7 +116,7 @@ class Classifier:
 
     def plot_lda_scaling(self, barchart, title=None, labels=None):
         self._run_classifier(split=False)
-        data = np.sum(np.absolute(self.lda.scalings_), 1)
+        data = np.sum(np.absolute(self.classifier.scalings_), 1)
         if barchart:
             plt.bar(range(len(data)), data)
             plt.xticks([x+0.5 for x in range(len(data))], labels)
