@@ -237,22 +237,19 @@ def plot_power_spectral_density():
          ('s', split)])
 
     def plot_func(xx, yy):
-        plt.ylim(0.0, 0.01)
         plot.datapoint(xx, yy, False)
     plot.datapoints_save(pipe.transform(X), y, 'psd', plot_func)
 
 
 def plot_power_spectral_density_2d():
-    # remove first few elements which are always huuuge
-    chop = transform.Extractor(lambda x: x[:, 4:])
-
     # plot power spectral density of data in 2D
     pipe = pipeline.Pipeline(
         [('a', transform.ElectrodeAvg()),
          ('p', transform.PostStimulus()),
-         ('w', transform.PowerSpectralDensity(256)),
-         ('c', chop)])
+         ('w', transform.PowerSpectralDensity(256))])
 
     def plot_func(xx, yy):
-        plt.pcolormesh(xx)
+        plt.pcolormesh(xx.T)
+        plt.xlabel('Time')
+        plt.ylabel('Frequency')
     plot.datapoints_save(pipe.transform(X), y, 'psd2d', plot_func)
