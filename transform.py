@@ -214,7 +214,8 @@ class PowerSpectralDensity(Extractor):
             # get window
             w = np.hanning(self.window_size) * x[i:i+self.window_size]
             # calculate periodogram of window
-            fw = np.square(np.fft.rfft(w))
+            fft = np.fft.rfft(w)
+            fw = np.log(np.sqrt(np.square(np.real(fft)) + np.square(np.imag(fft))))
             # add to power spectral density
             psd.append(fw)
 
