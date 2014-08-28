@@ -1,7 +1,7 @@
 from learn import *
 from transform import *
 from sda import SDA
-from sklearn import preprocessing
+from sklearn import preprocessing, decomposition
 from itertools import chain
 import scipy
 import random
@@ -571,3 +571,50 @@ def power_spectral_density_separation():
     classifier.plot('Separation using Power Spectral Density.')
     classifier.plot_lda_scaling(False,
                                 'Signififance of Power Spectral Density features.')
+
+
+def power_spectral_density_pca():
+    """
+    2014-08-28
+    Sum up power spectral density per-class to identify patterns.
+    """
+    plants = plant.load_all()
+    X, y, sources = datapoint.generate_all(plants)
+
+    # plot power spectral density of data in 2D
+    pipe = pipeline.Pipeline(
+        [('a', ElectrodeAvg()),
+         ('p', PostStimulus()),
+         ('w', PowerSpectralDensity(256))])
+
+    T = pipe.transform(X)
+
+    # perform PCA
+    pca = decomposition.PCA()
+
+    def plot_mesh(data, title=None):
+        plt.pcolormesh(data.T)
+        if title:
+            plt.title(title)
+        plt.xlabel('Time')
+        plt.ylabel('Frequency')
+        plt.show()
+
+    for yy, (Xs, ys) in datapoint.group_types(T, y):
+        # sum together results
+        total = sum(Xs)
+
+        # plot result
+        plot_mesh(total, yy)
+
+        # train PCA on this class
+        pca.fit([np.ravel(x) for x in Xs])
+
+        # plot each component
+        for i, c in enumerate(pca.components_):
+            if i > 10:
+                break
+            # reshape into a 2D array
+            c = c.reshape(Xs[0].shape)
+            # plot component
+            plot_mesh(c, yy + str(i))
