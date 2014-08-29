@@ -248,25 +248,33 @@ class Classifier:
             X = []
             coords = []
 
-            print "Getting datapoints"
-            skip = 10000
+            skip = 512
 
             for i in range(0, len(plant_data.readings)-datapoint.window_size, skip):
                 X.append(plant_data.readings[i:i+datapoint.window_size])
                 coords.append(i)
 
-            print "Transforming"
             pipe = pipeline.Pipeline(self.extract_pipe + self.postproc_pipe)
             X = pipe.transform(self.preprocess(X))
 
-            print "Predicting datapoints"
             probs = self.classifier.predict_proba(X)
 
-            print plant_data.readings.shape
-            print probs.shape
+            # take classification as highest probability class
+            classes = self.classifier.classes_
+            classifications = [classes[np.argmax(w)] for w in probs]
 
+            # calculate number of classification switches
+            switches = 0
+            for c1, c2 in zip(classifications, classifications[1:]):
+                if c1 != c2:
+                    switches += 1
+
+            # print switches, normalized by number of windows taken
+            print plant_data.name, float(switches) / len(coords)
+
+            # plot plant data with class probabilities
             plot.plant_data(plant_data)
-            for p, c in zip(probs.T, self.classifier.classes_):
+            for p, c in zip(probs.T, classes):
                 plt.plot(coords, p, label=c)
 
             plt.legend()
