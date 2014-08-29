@@ -127,7 +127,7 @@ def plot_noise():
 def plot_noise_correlation():
     pipe = pipeline.Pipeline(
         [('c', concat), ('n', noise), ('m', mov_avg), ('d', deriv), ('me', mean),
-         ('a', abs_), ('cr', correl)])
+         ('cr', correl)])
     plot_func = lambda xx, yy: plot.datapoint(xx, yy, False)
     plot.datapoints_save(pipe.transform(X), y, 'noise_correlation', plot_func)
 

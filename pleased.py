@@ -618,3 +618,27 @@ def power_spectral_density_pca():
             c = c.reshape(Xs[0].shape)
             # plot component
             plot_mesh(c, yy + str(i))
+
+
+def calc_time_delay():
+    """
+    2014-08-29
+    Calculate time delay between electrode channels.
+    Can be used to calculate propagation of response.
+    """
+    plants = plant.load_all()
+    X, y, sources = datapoint.generate_all(plants)
+
+    concat = Concat()
+    noise = Map(Noise(1000), divs=2)
+    mov_avg = Map(MovingAvg(100), divs=2)
+    deriv = Map(Differential(), divs=2)
+    mean = Map(MeanSubtract(), divs=2)
+
+    pipe = pipeline.Pipeline(
+        [('c', concat), ('n', noise), ('m', mov_avg), ('d', deriv), ('me', mean),
+         ('t', TimeDelay())])
+
+    T = pipe.transform(X)
+    for t, yy in zip(T, y):
+        print yy, t
