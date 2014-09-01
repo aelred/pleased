@@ -34,31 +34,43 @@ def show():
 
 
 def plant_data_save(plant_list, path):
+    fpath = os.path.join("plots", path)
+
+    # create folder if it doesn't exist
+    if not os.path.exists(fpath):
+        os.makedirs(fpath)
+
     # empty folder in advance
-    files = glob.glob(path)
+    files = glob.glob(fpath)
     for f in files:
         if os.path.isfile(f):
             os.remove(f)
 
     for p in plant_list:
         plant_data(p)
-        plt.savefig(os.path.join("plots", path, "%s.jpg" % p.name))
+        plt.savefig(os.path.join(fpath, "%s.jpg" % p.name))
         plt.clf()
         plt.close()
 
 
 def datapoints_save(X, y, path, plot_func=datapoint):
-    type_count = Counter()
+    fpath = os.path.join("plots", path)
+
+    # create folder if it doesn't exist
+    if not os.path.exists(fpath):
+        os.makedirs(fpath)
 
     # empty folder in advance
-    files = glob.glob(path)
+    files = glob.glob(fpath)
     for f in files:
         if os.path.isfile(f):
             os.remove(f)
 
+    type_count = Counter()
+
     for xx, yy in zip(X, y):
         type_count[yy] += 1
         plot_func(xx, yy)
-        plt.savefig(os.path.join("plots", path, "%s_%d.png" % (yy, type_count[yy])))
+        plt.savefig(os.path.join(fpath, "%s_%d.png" % (yy, type_count[yy])))
         plt.clf()
         plt.close()
