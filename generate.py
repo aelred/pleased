@@ -50,7 +50,7 @@ def plot_wavelets():
                          'wavelet', plot.datapoint_set)
 
 
-mov_avg = transform.Map(transform.MovingAvg(100), divs=2)
+mov_avg = transform.Map(transform.MovingAvg(256), divs=2)
 deriv = transform.Map(transform.Differential(), divs=2)
 mean = transform.Map(transform.MeanSubtract(), divs=2)
 
@@ -84,20 +84,29 @@ correl = transform.CrossCorrelation()
 window = transform.Extractor(lambda x: x * np.hanning(len(x)))
 
 
+def correl_plot_func(xx, yy):
+    plot.datapoint(xx, yy, False)
+    plt.axvline(len(xx) / 2, color='r')
+
+
 def plot_cross_correlation():
+    # plot cross correlation of electrode channels
+    pipe = pipeline.Pipeline([('c', concat), ('me', mean), ('cr', correl)])
+    plot.datapoints_save(pipe.transform(X), y, 'correlation', correl_plot_func)
+
+
+def plot_cross_correlation_deriv():
     # plot cross correlation of electrode channels
     pipe = pipeline.Pipeline([('c', concat), ('m', mov_avg), ('d', deriv),
                               ('me', mean), ('cr', correl), ('w', window)])
-    plot_func = lambda xx, yy: plot.datapoint(xx, yy, False)
-    plot.datapoints_save(pipe.transform(X), y, 'correlation', plot_func)
+    plot.datapoints_save(pipe.transform(X), y, 'correlation_deriv', correl_plot_func)
 
 
 def plot_cross_correlation_abs():
     # plot cross correlation of electrode channels with absolute valued data
     pipe = pipeline.Pipeline([('c', concat), ('m', mov_avg), ('d', deriv), ('me', mean),
                               ('a', abs_), ('cr', correl), ('w', window)])
-    plot_func = lambda xx, yy: plot.datapoint(xx, yy, False)
-    plot.datapoints_save(pipe.transform(X), y, 'correlation_abs', plot_func)
+    plot.datapoints_save(pipe.transform(X), y, 'correlation_abs', correl_plot_func)
 
 
 def plot_fourier():
@@ -115,7 +124,7 @@ def plot_fourier():
     plot.datapoints_save(pipe.transform(X), y, 'fourier', plot_func)
 
 
-noise = transform.Map(transform.Noise(1000), divs=2)
+noise = transform.Map(transform.Noise(1024), divs=2)
 
 
 def plot_noise():
@@ -125,11 +134,11 @@ def plot_noise():
 
 
 def plot_noise_correlation():
+    # use wider smoothing window
+    noise2 = transform.Map(transform.Noise(4096), divs=2)
     pipe = pipeline.Pipeline(
-        [('c', concat), ('n', noise), ('m', mov_avg), ('d', deriv), ('me', mean),
-         ('cr', correl)])
-    plot_func = lambda xx, yy: plot.datapoint(xx, yy, False)
-    plot.datapoints_save(pipe.transform(X), y, 'noise_correlation', plot_func)
+        [('c', concat), ('n', noise2), ('me', mean), ('cr', correl)])
+    plot.datapoints_save(pipe.transform(X), y, 'noise_correlation', correl_plot_func)
 
 
 def plot_ica():
