@@ -487,11 +487,11 @@ def histogram_classifier():
     Return wavelet histogram classifier.
     """
     num_levels = 15
-    drop_levels = 3
+    drop_levels = 0
     histograms = [Histogram(10) for x in range(num_levels-drop_levels)]
     features = [
         ('wavelet',
-         DiscreteWavelet('haar', num_levels, drop_levels, True, histograms))
+         DiscreteWavelet('db4', num_levels, drop_levels, True, histograms))
     ]
     return Classifier(preproc_standard, features, postproc_standard)
 
