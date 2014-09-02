@@ -135,9 +135,9 @@ def plot_noise():
 
 def plot_noise_correlation():
     # use wider smoothing window
-    noise2 = transform.Map(transform.Noise(4096), divs=2)
+    noise2 = transform.Map(transform.Noise(2048), divs=2)
     pipe = pipeline.Pipeline(
-        [('c', concat), ('n', noise2), ('me', mean), ('cr', correl)])
+        [('c', concat), ('n', noise2), ('me', mean), ('cr', correl), ('w', window)])
     plot.datapoints_save(pipe.transform(X), y, 'noise_correlation', correl_plot_func)
 
 

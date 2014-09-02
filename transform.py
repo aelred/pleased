@@ -190,7 +190,8 @@ class TimeDelay(Extractor):
         cc = CrossCorrelation()(x)  # get cross correlation
         window = np.hanning(len(cc))
         cc *= window  # apply window
-        return [float(cc.argmax() - (len(cc) / 2))]  # find maximum index
+        # find maximum index in first half (assume delayed in one direction)
+        return [float(len(cc) / 2) - cc[:len(cc) / 2 + 1].argmax()]
 
 
 class Fourier(Extractor):
