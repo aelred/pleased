@@ -641,4 +641,22 @@ def calc_time_delay():
 
     T = pipe.transform(X)
     for t, yy in zip(T, y):
-        print yy, t
+        if yy not in delays:
+            delays[yy] = []
+        delays[yy].append(t[0])
+
+    return delays
+
+
+def ozone_initial_separation():
+    """
+    2014-09-02
+    Test if the initial ozone application is more discriminative than later
+    applications. This may be the case because the plant is closing its pores
+    after the first application.
+    """
+    c = histogram_classifier()
+    classifier = InitClassifier(c.preproc_pipe, c.extract_pipe, c.postproc_pipe,
+                                SDA(num_features=20),
+                                ['null', 'ozone', 'ozone_init'])
+    classifier.plot('Separating initial ozone application')

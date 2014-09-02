@@ -50,12 +50,15 @@ class Classifier:
         self.params = params or [{}]
         self.labels = labels or def_labels
 
+    def _gen_datapoints(self, plants):
+        return datapoint.generate_all(plants)
+
     def get_data(self, plants=None):
         # load plants if parameter not provided
         if plants is None:
             plants = plant.load_all()
         # extract windows from plant data
-        X, y, sources = datapoint.generate_all(plants)
+        X, y, sources = self._gen_datapoints(plants)
         # filter to relevant datapoint types
         X, y = datapoint.filter_types(zip(X, sources), y, self.labels)
         # balance the dataset
@@ -299,3 +302,10 @@ class NullClassifier(Classifier):
                 return yy
         y = [set_class(yy, source) for yy, source in zip(y, sources)]
         return Classifier.preprocess(self, X), y, sources
+
+
+class InitClassifier(Classifier):
+    """ Treats initial stimulus applications as separate classes. """
+
+    def _gen_datapoints(self, plants):
+        return datapoint.generate_all(plants, split_initial=True)

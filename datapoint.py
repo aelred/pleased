@@ -15,9 +15,11 @@ window_offset = -4096
 null_offset = 512
 
 
-def generate(plant_data):
+def generate(plant_data, split_initial=False):
     """
     Process plant data to produce a list of classified data points.
+    If split_initial is true, treat initial application of each stimulus
+    as a separate class.
     """
 
     # if sample rate is not close to ideal sample rate, drop this data
@@ -28,7 +30,14 @@ def generate(plant_data):
     X = []
     y = []
 
+    stim_types = set()
+
     def add_window(start, stim_type):
+        if split_initial and stim_type not in stim_types:
+            # this is the first appearance of a stimulus
+            stim_types.add(stim_type)
+            stim_type += '_init'
+
         window = plant_data.readings[start:start+window_size]
 
         # skip if window is not large enough (e.g. stimulus near end of data)
@@ -55,7 +64,7 @@ def generate(plant_data):
     return X, y, [plant_data.name] * len(X)
 
 
-def generate_all(plants):
+def generate_all(plants, *args, **kwargs):
     """
     Process a list of plant data.
 
@@ -67,7 +76,7 @@ def generate_all(plants):
     sources = []
 
     for plant_data in plants:
-        result = generate(plant_data)
+        result = generate(plant_data, *args, **kwargs)
         if result is None:
             continue
         Xp, yp, sourcep = result
