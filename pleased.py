@@ -629,17 +629,16 @@ def calc_time_delay():
     plants = plant.load_all()
     X, y, sources = datapoint.generate_all(plants)
 
-    concat = Concat()
-    noise = Map(Noise(1000), divs=2)
-    mov_avg = Map(MovingAvg(100), divs=2)
-    deriv = Map(Differential(), divs=2)
+    # mov_avg = Map(MovingAvg(256), divs=2)
+    # deriv = Map(Differential(), divs=2)
+    # noise = Map(Noise(2048), divs=2)
     mean = Map(MeanSubtract(), divs=2)
 
     pipe = pipeline.Pipeline(
-        [('c', concat), ('n', noise), ('m', mov_avg), ('d', deriv), ('me', mean),
-         ('t', TimeDelay())])
+        preproc_separate + [('me', mean), ('t', TimeDelay())])
 
     T = pipe.transform(X)
+    delays = {}
     for t, yy in zip(T, y):
         if yy not in delays:
             delays[yy] = []
