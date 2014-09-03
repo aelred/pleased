@@ -659,3 +659,23 @@ def ozone_initial_separation():
                                 SDA(num_features=20),
                                 ['null', 'ozone', 'ozone_init'])
     classifier.plot('Separating initial ozone application')
+
+
+def histogram_elec_separation():
+    """
+    2014-09-03
+    Ben showed that the electrode channels have distinct features when
+    calculating their wavelet level histograms, so see if operating on them
+    separately improves performance.
+    """
+    num_levels = 15
+    drop_levels = 3
+
+    def wavelet():
+        histograms = [Histogram(10) for x in range(num_levels-drop_levels)]
+        return DiscreteWavelet('db4', num_levels, drop_levels, True, histograms)
+    features = [('wavelet', Map([wavelet(), wavelet()], divs=2))]
+
+    classifier = Classifier([('c', Concat()), ('p', Map(PostStimulus(), divs=2))],
+                            features, postproc_standard, SDA(num_features=15))
+    classifier.plot('Separation using histograms of electrode channels')
