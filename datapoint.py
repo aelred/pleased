@@ -56,7 +56,7 @@ def generate(plant_data, split_initial=False):
 
     # get null stimulus from windows before the first stimulus
     null_start = null_offset
-    overlap = 8
+    overlap = 2
     while null_start + window_size + null_offset < first_stim:
         add_window(null_start, 'null')
         null_start += window_size / overlap
