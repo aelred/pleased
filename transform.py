@@ -5,6 +5,7 @@ from scipy.stats import linregress
 import datapoint
 from scipy.signal import decimate
 import parmap
+import itertools
 
 
 class Extractor(base.BaseEstimator):
@@ -150,10 +151,19 @@ class DecimateWindow(Extractor):
 
 
 class Map(Extractor):
-    """ Apply a function to each part of a feature (e.g. each electrode channel). """
+    """
+    Apply a function to each part of a feature (e.g. each electrode channel).
+    The function can either be a single function or a list of functions.
+    """
 
     def __init__(self, f, steps=None, divs=None):
-        self.f = f
+        try:
+            iter(f)
+        except TypeError:
+            self.fs = itertools.repeat(f)
+        else:
+            self.fs = f
+
         self.steps = steps
         self.divs = divs
 
@@ -161,8 +171,8 @@ class Map(Extractor):
         print X.shape
         steps = self.steps or X.shape[1] / self.divs
         try:
-            for i in range(0, X.shape[1], steps):
-                self.f = self.f.fit(X[:, i:i+steps], y)
+            for i, f in zip(range(0, X.shape[1], steps), self.fs):
+                f.fit(X[:, i:i+steps], y)
         except AttributeError:
             # f is a function, not a transformer
             pass
@@ -170,7 +180,8 @@ class Map(Extractor):
 
     def extractor(self, x):
         steps = self.steps or len(x) / self.divs
-        return np.ravel([self.f(x[i:i+steps]) for i in range(0, len(x), steps)])
+        return np.ravel([f(x[i:i+steps]) for i, f in
+                         zip(range(0, len(x), steps), self.fs)])
 
 
 class CrossCorrelation(Extractor):
