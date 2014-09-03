@@ -126,8 +126,8 @@ class Histogram(Extractor):
         x = np.concatenate([xx for xx in X])
         stdev = np.std(x)
         mean = np.mean(x)
-        # set range to three standard deviations
-        self.range = (mean-stdev*3, mean+stdev*3)
+        # set range to one standard deviation
+        self.range = (mean-stdev, mean+stdev)
         return self
 
     def extractor(self, x):
