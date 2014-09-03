@@ -240,8 +240,7 @@ def sda_separation_50():
     Plot separation using SDA and only a small number of features.
     """
 
-    classifier = Classifier(preproc_min, [], postproc_standard,
-                            svm.SVC(), SDA(num_features=50))
+    classifier = Classifier(preproc_min, [], postproc_standard, SDA(num_features=50))
     classifier.plot('Separation using SDA and 50 features.')
     classifier.plot_lda_scaling(False, 'Significance of features using SDA scaling')
 
@@ -254,7 +253,7 @@ def wavelet_separation():
 
     features = [('wavelet', DiscreteWavelet('haar', 15, 0, True))]
     classifier = Classifier(preproc_standard, features, postproc_standard,
-                            svm.SVC())  # SDA(num_features=50))
+                            SDA(num_features=50))
     classifier.plot('Separation using SDA on wavelet transform.')
     classifier.plot_lda_scaling(False, 'Signifiance of wavelet transform features.')
 
@@ -390,7 +389,7 @@ def multiple_ensembles():
     union = pipeline.FeatureUnion([('a', avg_feat), ('n', noise),
                                    ('w', wavelet), ('c', cross)])
     classifier = Classifier(pre, [('union', union)], postproc_standard,
-                            svm.SVC(), SDA(num_features=50))
+                            SDA(num_features=50))
     classifier.plot('Separation using multiple feature ensembles.')
 
     lab_f = lambda name: [name, '', '', 'v', '', '', 'h', '', '', '']
@@ -420,7 +419,7 @@ def wavelet_null_separation():
 
     features = [('wavelet', DiscreteWavelet('haar', 11, 0, True))]
     classifier = NullClassifier(preproc_standard, features, postproc_standard,
-                                svm.SVC(), SDA(num_features=50))
+                                SDA(num_features=50))
     classifier.plot3d('Null separation using SDA on wavelet transform.')
     classifier.plot_lda_scaling(False, 'Signifiance of wavelet transform features.')
 

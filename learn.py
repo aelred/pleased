@@ -66,11 +66,11 @@ class Classifier:
 
         X, sources = zip(*X)
 
-        return self.preprocess(np.array(X)), np.array(y), np.array(sources)
+        return self.preprocess(np.array(X), np.array(y), np.array(sources))
 
-    def preprocess(self, X):
+    def preprocess(self, X, y=None, sources=None):
         print "Preprocessing data"
-        return pipeline.Pipeline(self.preproc_pipe).fit_transform(X)
+        return pipeline.Pipeline(self.preproc_pipe).fit_transform(X), y, sources
 
     def _pipeline(self):
         return pipeline.Pipeline(
@@ -253,12 +253,14 @@ class Classifier:
 
             skip = 512
 
+            # take windows on data
             for i in range(0, len(plant_data.readings)-datapoint.window_size, skip):
                 X.append(plant_data.readings[i:i+datapoint.window_size])
                 coords.append(i)
 
+            # transform and predict classes on all windows
             pipe = pipeline.Pipeline(self.extract_pipe + self.postproc_pipe)
-            X = pipe.transform(self.preprocess(X))
+            X = pipe.transform(self.preprocess(X)[0])
 
             probs = self.classifier.predict_proba(X)
 
@@ -301,7 +303,7 @@ class NullClassifier(Classifier):
             else:
                 return yy
         y = [set_class(yy, source) for yy, source in zip(y, sources)]
-        return Classifier.preprocess(self, X), y, sources
+        return Classifier.preprocess(self, X, y, sources)
 
 
 class InitClassifier(Classifier):
