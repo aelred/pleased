@@ -229,7 +229,8 @@ def sda_separation():
     Plot separation using Sparse Discriminant Analysis.
     """
 
-    classifier = Classifier(preproc_min, [], postproc_standard, SDA())
+    classifier = Classifier(preproc_min, [], postproc_standard,
+                            SDA(num_features=100))
     classifier.plot('Separation using SDA')
     classifier.plot_lda_scaling(False, 'Significance of features using SDA scaling')
 
@@ -251,8 +252,8 @@ def wavelet_separation():
     Plot separation using SDA on a wavelet transform.
     """
 
-    features = [('wavelet', DiscreteWavelet('haar', 15, 0, True))]
-    classifier = Classifier(preproc_standard, features, postproc_standard,
+    features = [('wavelet', DiscreteWavelet('db4', 12, 0, True))]
+    classifier = Classifier(preproc_min, features, postproc_standard,
                             SDA(num_features=50))
     classifier.plot('Separation using SDA on wavelet transform.')
     classifier.plot_lda_scaling(False, 'Signifiance of wavelet transform features.')
@@ -268,7 +269,7 @@ def wavelet_feature():
     ensembles = [FeatureEnsemble() for i in range(num_levels-drop_levels)]
     features = [
         ('wavelet',
-         DiscreteWavelet('haar', num_levels, drop_levels, True, ensembles))
+         DiscreteWavelet('db4', num_levels, drop_levels, True, ensembles))
     ]
     classifier = Classifier(preproc_standard, features,
                             postproc_standard, SDA(num_features=20))
@@ -300,7 +301,7 @@ def cross_correlation():
 def cross_correlation_windowed():
     """
     2014-07-30
-    Plot separation using cross-correlation of electrode channels.
+    Plot separation using cross-correlation of electrode channels and windowing.
     """
 
     mov_avg = Map(MovingAvg(100), divs=2)
@@ -376,7 +377,7 @@ def multiple_ensembles():
     wavelet = pipeline.Pipeline(
         [avg,
          ('wavelet',
-          DiscreteWavelet('haar', num_levels, drop_levels, True,
+          DiscreteWavelet('db4', num_levels, drop_levels, True,
                           [FeatureEnsemble()] * (num_levels - drop_levels)))
          ])
 
@@ -417,7 +418,7 @@ def wavelet_null_separation():
     Plot separation of null data using SDA on a wavelet transform.
     """
 
-    features = [('wavelet', DiscreteWavelet('haar', 11, 0, True))]
+    features = [('wavelet', DiscreteWavelet('db4', 11, 0, True))]
     classifier = NullClassifier(preproc_standard, features, postproc_standard,
                                 SDA(num_features=50))
     classifier.plot3d('Null separation using SDA on wavelet transform.')
